@@ -1,0 +1,3234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Finanzas Personales</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Panel de finanzas personales para gestionar ingresos, gastos y ahorros">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Apple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finanzas">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- ==================== ESTILOS CSS ==================== -->
+    <style>
+        /* === Variables de tema (CSS Custom Properties) === */
+        :root {
+            /* Colores del tema claro (por defecto) */
+            --color-fondo: #e8eaef;
+            --color-fondo-tarjeta: #ffffff;
+            --color-fondo-secundario: #f5f6f8;
+            --color-texto: #333333;
+            --color-texto-secundario: #666666;
+            --color-texto-terciario: #999999;
+            --color-borde: #d0d0d0;
+            --color-borde-claro: #e5e5e5;
+            --color-primario: #667eea;
+            --color-primario-fin: #764ba2;
+            --color-exito: #27ae60;
+            --color-peligro: #e74c3c;
+            --color-info: #3498db;
+            --color-advertencia: #f39c12;
+            --color-ahorro: #9b59b6;
+            --sombra-tarjeta: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+            --sombra-tarjeta-hover: 0 4px 8px rgba(0, 0, 0, 0.15), 0 12px 24px rgba(0, 0, 0, 0.15);
+            --borde-tarjeta: 1px solid rgba(0, 0, 0, 0.08);
+            --gradiente-primario: linear-gradient(135deg, var(--color-primario) 0%, var(--color-primario-fin) 100%);
+        }
+
+        /* Tema Oscuro */
+        [data-tema="oscuro"] {
+            --color-fondo: #1a1a2e;
+            --color-fondo-tarjeta: #16213e;
+            --color-fondo-secundario: #1f2940;
+            --color-texto: #e8e8e8;
+            --color-texto-secundario: #b0b0b0;
+            --color-texto-terciario: #808080;
+            --color-borde: #2d3a4f;
+            --color-borde-claro: #253040;
+            --color-primario: #7c8ce8;
+            --color-primario-fin: #9b6dcc;
+            --sombra-tarjeta: 0 2px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+            --sombra-tarjeta-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+            --borde-tarjeta: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Tema Verde Naturaleza */
+        [data-tema="naturaleza"] {
+            --color-fondo: #d5e5db;
+            --color-fondo-tarjeta: #ffffff;
+            --color-fondo-secundario: #e8f5e9;
+            --color-texto: #1a3528;
+            --color-texto-secundario: #3d5a4a;
+            --color-texto-terciario: #5a7d68;
+            --color-borde: #a5d6a7;
+            --color-borde-claro: #c8e6c9;
+            --color-primario: #2e7d32;
+            --color-primario-fin: #1b5e20;
+            --sombra-tarjeta: 0 2px 4px rgba(30, 80, 40, 0.15), 0 8px 16px rgba(30, 80, 40, 0.12);
+            --sombra-tarjeta-hover: 0 4px 8px rgba(30, 80, 40, 0.2), 0 12px 24px rgba(30, 80, 40, 0.18);
+            --borde-tarjeta: 1px solid rgba(46, 125, 50, 0.15);
+        }
+
+        /* Tema Océano */
+        [data-tema="oceano"] {
+            --color-fondo: #d4e8f7;
+            --color-fondo-tarjeta: #ffffff;
+            --color-fondo-secundario: #e1f5fe;
+            --color-texto: #1a365d;
+            --color-texto-secundario: #2c5282;
+            --color-texto-terciario: #4a7ab0;
+            --color-borde: #90caf9;
+            --color-borde-claro: #bbdefb;
+            --color-primario: #1565c0;
+            --color-primario-fin: #0d47a1;
+            --sombra-tarjeta: 0 2px 8px rgba(21, 101, 192, 0.1), 0 4px 16px rgba(21, 101, 192, 0.08);
+            --sombra-tarjeta-hover: 0 4px 12px rgba(21, 101, 192, 0.15), 0 8px 24px rgba(21, 101, 192, 0.12);
+            --borde-tarjeta: 1px solid rgba(21, 101, 192, 0.1);
+        }
+
+        /* === Reset y estilos base === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--color-fondo);
+            color: var(--color-texto);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* === Contenedor principal === */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* === Encabezado === */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--gradiente-primario);
+            color: white;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        /* === Selector de tema === */
+        .tema-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tema-selector label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .tema-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            padding: 0;
+        }
+
+        .tema-btn:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        .tema-btn.activo {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .tema-btn[data-tema-valor="claro"] {
+            background: #f5f5f5;
+        }
+
+        .tema-btn[data-tema-valor="oscuro"] {
+            background: #1a1a2e;
+        }
+
+        .tema-btn[data-tema-valor="naturaleza"] {
+            background: #2e7d32;
+        }
+
+        .tema-btn[data-tema-valor="oceano"] {
+            background: #1565c0;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* === Sección de resumen (tarjetas) === */
+        .resumen {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tarjeta {
+            background: var(--color-fondo-tarjeta);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--sombra-tarjeta);
+            border: var(--borde-tarjeta);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+
+        .tarjeta:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--sombra-tarjeta-hover);
+        }
+
+        .tarjeta h3 {
+            font-size: 0.9rem;
+            color: var(--color-texto-secundario);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tarjeta .monto {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .tarjeta .subtexto {
+            font-size: 0.8rem;
+            color: var(--color-texto-terciario);
+            margin-top: 5px;
+        }
+
+        .tarjeta.ingresos .monto { color: var(--color-exito); }
+        .tarjeta.gastos .monto { color: var(--color-peligro); }
+        .tarjeta.balance .monto { color: var(--color-info); }
+        .tarjeta.balance .monto.negativo { color: var(--color-peligro); }
+        .tarjeta.ahorro .monto { color: var(--color-ahorro); }
+        .tarjeta.transacciones .monto { color: var(--color-advertencia); }
+
+        .tarjeta .icono {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        /* === Secciones generales === */
+        section {
+            background: var(--color-fondo-tarjeta);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--sombra-tarjeta);
+            border: var(--borde-tarjeta);
+            transition: background-color 0.3s ease;
+        }
+
+        section h2 {
+            font-size: 1.3rem;
+            color: var(--color-texto);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-borde-claro);
+        }
+
+        /* === Formulario de registro === */
+        .formulario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .campo label {
+            font-size: 0.85rem;
+            color: var(--color-texto-secundario);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .campo input,
+        .campo select,
+        .campo textarea {
+            padding: 12px 15px;
+            border: 2px solid var(--color-borde);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            font-family: inherit;
+            background-color: var(--color-fondo-tarjeta);
+            color: var(--color-texto);
+        }
+
+        .campo input:focus,
+        .campo select:focus,
+        .campo textarea:focus {
+            outline: none;
+            border-color: var(--color-primario);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .campo textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        /* === Campo con botón inline === */
+        .campo-con-boton {
+            display: flex;
+            gap: 10px;
+        }
+
+        .campo-con-boton input,
+        .campo-con-boton select {
+            flex: 1;
+        }
+
+        .campo-con-boton .btn {
+            padding: 12px 15px;
+            white-space: nowrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primario {
+            background: var(--gradiente-primario);
+            color: white;
+        }
+
+        .btn-primario:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secundario {
+            background: var(--color-fondo-secundario);
+            color: var(--color-texto-secundario);
+        }
+
+        .btn-secundario:hover {
+            background: var(--color-borde);
+        }
+
+        .btn-exito {
+            background: var(--color-exito);
+            color: white;
+        }
+
+        .btn-exito:hover {
+            opacity: 0.9;
+        }
+
+        .btn-eliminar {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--color-peligro);
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .btn-eliminar:hover {
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .btn-editar {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--color-info);
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .btn-editar:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        .btn-pequeno {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn-icon {
+            padding: 10px;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        /* === Grupo de botones === */
+        .btn-grupo {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* === Filtros === */
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filtros .campo {
+            min-width: 150px;
+        }
+
+        /* === Tabla de movimientos === */
+        .tabla-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--color-fondo-secundario);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-borde);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--color-texto-secundario);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.3s ease;
+        }
+
+        th:hover {
+            background: var(--color-borde);
+        }
+
+        th.ordenado {
+            color: var(--color-primario);
+        }
+
+        th .flecha {
+            margin-left: 5px;
+            font-size: 0.7rem;
+        }
+
+        tbody tr {
+            transition: background 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--color-fondo-secundario);
+        }
+
+        .tipo-ingreso {
+            color: var(--color-exito);
+            font-weight: 600;
+        }
+
+        .tipo-gasto {
+            color: var(--color-peligro);
+            font-weight: 600;
+        }
+
+        .monto-positivo {
+            color: var(--color-exito);
+            font-weight: 600;
+        }
+
+        .monto-negativo {
+            color: var(--color-peligro);
+            font-weight: 600;
+        }
+
+        .sin-datos {
+            text-align: center;
+            padding: 40px;
+            color: var(--color-texto-terciario);
+        }
+
+        .acciones-celda {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* === Sección de objetivo de ahorro === */
+        .objetivo-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .objetivo-input {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .progreso-container {
+            padding: 20px;
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+        }
+
+        .progreso-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--color-texto-secundario);
+        }
+
+        .progreso-barra {
+            height: 20px;
+            background: var(--color-borde);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progreso-relleno {
+            height: 100%;
+            background: var(--gradiente-primario);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .progreso-porcentaje {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-primario);
+        }
+
+        /* === Resumen por categorías === */
+        .categorias-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .categoria-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+            gap: 15px;
+        }
+
+        .categoria-icono {
+            font-size: 1.5rem;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-fondo-tarjeta);
+            border-radius: 10px;
+        }
+
+        .categoria-info {
+            flex: 1;
+        }
+
+        .categoria-nombre {
+            font-weight: 600;
+            color: var(--color-texto);
+            margin-bottom: 5px;
+        }
+
+        .categoria-barra {
+            height: 8px;
+            background: var(--color-borde);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .categoria-barra-relleno {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .categoria-barra-relleno.ingreso {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+
+        .categoria-barra-relleno.gasto {
+            background: linear-gradient(90deg, #e74c3c, #ec7063);
+        }
+
+        .categoria-monto {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: right;
+            min-width: 100px;
+        }
+
+        .categoria-monto.ingreso { color: var(--color-exito); }
+        .categoria-monto.gasto { color: var(--color-peligro); }
+
+        /* === Gestión de categorías === */
+        .categorias-personalizadas {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+        }
+
+        .categorias-personalizadas h4 {
+            margin-bottom: 15px;
+            color: var(--color-texto-secundario);
+        }
+
+        .lista-categorias {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tag-categoria {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: var(--color-fondo-tarjeta);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid var(--color-borde);
+        }
+
+        .tag-categoria.ingreso {
+            border-color: var(--color-exito);
+            color: var(--color-exito);
+        }
+
+        .tag-categoria.gasto {
+            border-color: var(--color-peligro);
+            color: var(--color-peligro);
+        }
+
+        .tag-categoria .eliminar-tag {
+            cursor: pointer;
+            font-size: 1.1rem;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .tag-categoria .eliminar-tag:hover {
+            opacity: 1;
+        }
+
+        .agregar-categoria-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .agregar-categoria-form .campo {
+            min-width: 150px;
+        }
+
+        /* === Modal === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.activo {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--color-fondo-tarjeta);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: var(--color-texto);
+        }
+
+        .modal-botones {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* === Mensaje de estado === */
+        .mensaje {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .mensaje.exito {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .mensaje.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        /* === Herramientas / Exportar === */
+        .herramientas {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        /* === Gráficos === */
+        .graficos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .grafico-wrapper {
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 300px;
+        }
+
+        .grafico-wrapper h4 {
+            margin-bottom: 15px;
+            color: var(--color-texto);
+            font-size: 1rem;
+        }
+
+        .grafico-canvas {
+            max-height: 250px;
+        }
+
+        /* === Selector de Período === */
+        .periodo-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .periodo-selector select {
+            padding: 8px 15px;
+            border: 2px solid var(--color-borde);
+            border-radius: 8px;
+            background: var(--color-fondo-tarjeta);
+            color: var(--color-texto);
+            font-size: 0.9rem;
+        }
+
+        .periodo-selector label {
+            color: var(--color-texto-secundario);
+            font-weight: 500;
+        }
+
+        /* === Presupuestos === */
+        .presupuestos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .presupuesto-item {
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .presupuesto-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .presupuesto-categoria {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--color-texto);
+        }
+
+        .presupuesto-valores {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: var(--color-texto-secundario);
+        }
+
+        .presupuesto-barra {
+            height: 10px;
+            background: var(--color-borde);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .presupuesto-barra-relleno {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .presupuesto-barra-relleno.normal {
+            background: linear-gradient(90deg, var(--color-exito), #2ecc71);
+        }
+
+        .presupuesto-barra-relleno.advertencia {
+            background: linear-gradient(90deg, var(--color-advertencia), #f1c40f);
+        }
+
+        .presupuesto-barra-relleno.excedido {
+            background: linear-gradient(90deg, var(--color-peligro), #ec7063);
+        }
+
+        .presupuesto-estado {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .presupuesto-estado.normal { color: var(--color-exito); }
+        .presupuesto-estado.advertencia { color: var(--color-advertencia); }
+        .presupuesto-estado.excedido { color: var(--color-peligro); }
+
+        .agregar-presupuesto-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--color-borde);
+        }
+
+        /* === Movimientos Recurrentes === */
+        .recurrentes-lista {
+            display: grid;
+            gap: 10px;
+        }
+
+        .recurrente-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+            gap: 15px;
+        }
+
+        .recurrente-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .recurrente-icono {
+            font-size: 1.5rem;
+        }
+
+        .recurrente-detalles h4 {
+            font-size: 0.95rem;
+            color: var(--color-texto);
+            margin-bottom: 3px;
+        }
+
+        .recurrente-detalles span {
+            font-size: 0.8rem;
+            color: var(--color-texto-terciario);
+        }
+
+        .recurrente-monto {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .recurrente-monto.ingreso { color: var(--color-exito); }
+        .recurrente-monto.gasto { color: var(--color-peligro); }
+
+        .frecuencia-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--color-primario);
+            color: white;
+        }
+
+        /* === Búsqueda === */
+        .busqueda-container {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .busqueda-container input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 2px solid var(--color-borde);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: var(--color-fondo-tarjeta);
+            color: var(--color-texto);
+        }
+
+        .busqueda-container::before {
+            content: "🔍";
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+        }
+
+        /* === Importar === */
+        .importar-zona {
+            border: 2px dashed var(--color-borde);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .importar-zona:hover {
+            border-color: var(--color-primario);
+            background: var(--color-fondo-secundario);
+        }
+
+        .importar-zona.arrastrando {
+            border-color: var(--color-primario);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .importar-zona p {
+            color: var(--color-texto-secundario);
+            margin-bottom: 10px;
+        }
+
+        .importar-input {
+            display: none;
+        }
+
+        /* === Responsive === */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.6rem;
+            }
+
+            header p {
+                font-size: 0.95rem;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            section {
+                padding: 15px;
+            }
+
+            .tarjeta {
+                padding: 20px;
+            }
+
+            .tarjeta .monto {
+                font-size: 1.5rem;
+            }
+
+            .objetivo-container {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+
+            .filtros {
+                flex-direction: column;
+            }
+
+            .filtros .campo {
+                width: 100%;
+            }
+
+            .agregar-categoria-form {
+                flex-direction: column;
+            }
+
+            .agregar-categoria-form .campo {
+                width: 100%;
+            }
+
+            .categoria-item {
+                flex-wrap: wrap;
+            }
+
+            .categoria-monto {
+                width: 100%;
+                text-align: left;
+                margin-top: 10px;
+            }
+
+            .acciones-celda {
+                flex-direction: column;
+            }
+        }
+
+        /* === Animaciones === */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== ENCABEZADO ==================== -->
+    <header>
+        <!-- Selector de tema -->
+        <div class="tema-selector">
+            <button class="tema-btn activo" data-tema-valor="claro" onclick="cambiarTema('claro')" title="Tema Claro">☀️</button>
+            <button class="tema-btn" data-tema-valor="oscuro" onclick="cambiarTema('oscuro')" title="Tema Oscuro">🌙</button>
+            <button class="tema-btn" data-tema-valor="naturaleza" onclick="cambiarTema('naturaleza')" title="Tema Naturaleza">🌿</button>
+            <button class="tema-btn" data-tema-valor="oceano" onclick="cambiarTema('oceano')" title="Tema Océano">🌊</button>
+        </div>
+        <h1>💰 Panel de Finanzas Personales</h1>
+        <p>Organiza tus ingresos, gastos y ahorros en un solo lugar</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- ==================== SECCIÓN DE RESUMEN ==================== -->
+        <div class="resumen">
+            <!-- Tarjeta de ingresos totales -->
+            <div class="tarjeta ingresos">
+                <div class="icono">📈</div>
+                <h3>Ingresos del Mes</h3>
+                <div class="monto" id="total-ingresos">$0</div>
+                <div class="subtexto" id="count-ingresos">0 transacciones</div>
+            </div>
+            
+            <!-- Tarjeta de gastos totales -->
+            <div class="tarjeta gastos">
+                <div class="icono">📉</div>
+                <h3>Gastos del Mes</h3>
+                <div class="monto" id="total-gastos">$0</div>
+                <div class="subtexto" id="count-gastos">0 transacciones</div>
+            </div>
+            
+            <!-- Tarjeta de balance -->
+            <div class="tarjeta balance">
+                <div class="icono">⚖️</div>
+                <h3>Balance del Mes</h3>
+                <div class="monto" id="balance">$0</div>
+                <div class="subtexto" id="balance-estado">Neutro</div>
+            </div>
+            
+            <!-- Tarjeta de ahorro -->
+            <div class="tarjeta ahorro">
+                <div class="icono">🎯</div>
+                <h3>Objetivo de Ahorro</h3>
+                <div class="monto" id="ahorro-porcentaje">0%</div>
+                <div class="subtexto" id="ahorro-estado">Sin objetivo</div>
+            </div>
+
+            <!-- Tarjeta de transacciones totales -->
+            <div class="tarjeta transacciones">
+                <div class="icono">📊</div>
+                <h3>Total Histórico</h3>
+                <div class="monto" id="total-transacciones">0</div>
+                <div class="subtexto">movimientos registrados</div>
+            </div>
+        </div>
+
+        <!-- ==================== SECCIÓN DE OBJETIVO DE AHORRO ==================== -->
+        <section>
+            <h2>🎯 Objetivo de Ahorro Mensual</h2>
+            <div class="objetivo-container">
+                <div class="objetivo-input">
+                    <div class="campo">
+                        <label for="objetivo-monto">Meta de ahorro ($)</label>
+                        <input type="number" id="objetivo-monto" placeholder="Ej: 500000" min="0">
+                    </div>
+                    <button class="btn btn-primario" onclick="guardarObjetivo()">Establecer Objetivo</button>
+                </div>
+                <div class="progreso-container">
+                    <div class="progreso-info">
+                        <span>Ahorrado: <strong id="monto-ahorrado">$0</strong></span>
+                        <span>Meta: <strong id="meta-ahorro">$0</strong></span>
+                    </div>
+                    <div class="progreso-barra">
+                        <div class="progreso-relleno" id="progreso-relleno" style="width: 0%"></div>
+                    </div>
+                    <div class="progreso-porcentaje" id="progreso-porcentaje">0%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE GESTIÓN DE CATEGORÍAS ==================== -->
+        <section>
+            <h2>🏷️ Gestionar Categorías</h2>
+            <p style="color: #666; margin-bottom: 15px;">Agrega tus propias categorías personalizadas para organizar mejor tus finanzas.</p>
+            
+            <div class="categorias-personalizadas">
+                <h4>📥 Categorías de Ingreso</h4>
+                <div class="lista-categorias" id="lista-categorias-ingreso">
+                    <!-- Se llenan dinámicamente -->
+                </div>
+                
+                <h4 style="margin-top: 20px;">📤 Categorías de Gasto</h4>
+                <div class="lista-categorias" id="lista-categorias-gasto">
+                    <!-- Se llenan dinámicamente -->
+                </div>
+                
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+                
+                <h4>➕ Agregar Nueva Categoría</h4>
+                <div class="agregar-categoria-form">
+                    <div class="campo">
+                        <label for="nueva-categoria-tipo">Tipo</label>
+                        <select id="nueva-categoria-tipo">
+                            <option value="Ingreso">Ingreso</option>
+                            <option value="Gasto">Gasto</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="nueva-categoria-nombre">Nombre de la categoría</label>
+                        <input type="text" id="nueva-categoria-nombre" placeholder="Ej: Bonificaciones">
+                    </div>
+                    <div class="campo">
+                        <label for="nueva-categoria-icono">Icono (emoji)</label>
+                        <input type="text" id="nueva-categoria-icono" placeholder="Ej: 🎁" maxlength="2">
+                    </div>
+                    <button class="btn btn-exito" onclick="agregarCategoriaPersonalizada()">Agregar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE REGISTRO DE MOVIMIENTOS ==================== -->
+        <section>
+            <h2>➕ Registrar Nuevo Movimiento</h2>
+            
+            <!-- Mensaje de estado para feedback al usuario -->
+            <div class="mensaje" id="mensaje"></div>
+            
+            <!-- Formulario para agregar transacciones -->
+            <form id="formulario-movimiento" onsubmit="agregarMovimiento(event)">
+                <div class="formulario-grid">
+                    <!-- Campo de tipo de transacción -->
+                    <div class="campo">
+                        <label for="tipo">Tipo *</label>
+                        <select id="tipo" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Ingreso">Ingreso</option>
+                            <option value="Gasto">Gasto</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Campo de categoría -->
+                    <div class="campo">
+                        <label for="categoria">Categoría *</label>
+                        <select id="categoria" required>
+                            <option value="">Seleccionar...</option>
+                            <!-- Las categorías se cargan dinámicamente -->
+                        </select>
+                    </div>
+                    
+                    <!-- Campo de monto -->
+                    <div class="campo">
+                        <label for="monto">Monto ($) *</label>
+                        <input type="number" id="monto" placeholder="Ej: 50000" min="0.01" step="0.01" required>
+                    </div>
+                    
+                    <!-- Campo de fecha -->
+                    <div class="campo">
+                        <label for="fecha">Fecha *</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+                    
+                    <!-- Campo de descripción opcional -->
+                    <div class="campo" style="grid-column: 1 / -1;">
+                        <label for="descripcion">Descripción (opcional)</label>
+                        <textarea id="descripcion" placeholder="Ej: Pago de nómina quincenal..."></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primario">Agregar Movimiento</button>
+            </form>
+        </section>
+
+        <!-- ==================== SECCIÓN DE TABLA DE MOVIMIENTOS ==================== -->
+        <section>
+            <h2>📋 Historial de Movimientos</h2>
+            
+            <!-- Herramientas de exportación -->
+            <div class="herramientas">
+                <button class="btn btn-secundario btn-pequeno" onclick="exportarCSV()">📥 Exportar CSV</button>
+                <button class="btn btn-secundario btn-pequeno" onclick="exportarJSON()">📦 Exportar JSON</button>
+                <button class="btn btn-eliminar btn-pequeno" onclick="limpiarTodosDatos()">🗑️ Limpiar Todo</button>
+            </div>
+            
+            <!-- Filtros para la tabla -->
+            <div class="filtros">
+                <div class="busqueda-container">
+                    <input type="text" id="filtro-busqueda" placeholder="Buscar en descripción..." oninput="aplicarFiltros()">
+                </div>
+                <div class="campo">
+                    <label for="filtro-tipo">Filtrar por tipo</label>
+                    <select id="filtro-tipo" onchange="aplicarFiltros()">
+                        <option value="">Todos</option>
+                        <option value="Ingreso">Ingresos</option>
+                        <option value="Gasto">Gastos</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="filtro-categoria">Filtrar por categoría</label>
+                    <select id="filtro-categoria" onchange="aplicarFiltros()">
+                        <option value="">Todas</option>
+                        <!-- Las opciones se llenarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="filtro-fecha-desde">Desde</label>
+                    <input type="date" id="filtro-fecha-desde" onchange="aplicarFiltros()">
+                </div>
+                <div class="campo">
+                    <label for="filtro-fecha-hasta">Hasta</label>
+                    <input type="date" id="filtro-fecha-hasta" onchange="aplicarFiltros()">
+                </div>
+                <button class="btn btn-secundario" onclick="limpiarFiltros()">Limpiar filtros</button>
+            </div>
+            
+            <!-- Tabla de movimientos -->
+            <div class="tabla-container">
+                <table id="tabla-movimientos">
+                    <thead>
+                        <tr>
+                            <th onclick="ordenarTabla('fecha')">
+                                Fecha <span class="flecha" id="flecha-fecha"></span>
+                            </th>
+                            <th onclick="ordenarTabla('tipo')">
+                                Tipo <span class="flecha" id="flecha-tipo"></span>
+                            </th>
+                            <th onclick="ordenarTabla('categoria')">
+                                Categoría <span class="flecha" id="flecha-categoria"></span>
+                            </th>
+                            <th>Descripción</th>
+                            <th onclick="ordenarTabla('monto')">
+                                Monto <span class="flecha" id="flecha-monto"></span>
+                            </th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla">
+                        <!-- Los movimientos se renderizarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+                
+                <!-- Mensaje cuando no hay datos -->
+                <div class="sin-datos" id="sin-datos">
+                    No hay movimientos registrados. ¡Comienza agregando tu primer ingreso o gasto!
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE RESUMEN POR CATEGORÍAS ==================== -->
+        <section>
+            <h2>📊 Resumen por Categorías (Este Mes)</h2>
+            <div class="categorias-grid" id="resumen-categorias">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div class="sin-datos" id="sin-categorias" style="display: none;">
+                Agrega movimientos para ver el resumen por categorías.
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE GRÁFICOS ==================== -->
+        <section>
+            <h2>📈 Gráficos y Estadísticas</h2>
+            
+            <!-- Selector de período -->
+            <div class="periodo-selector">
+                <label for="grafico-mes">Mes:</label>
+                <select id="grafico-mes" onchange="actualizarGraficos()">
+                    <!-- Se llena dinámicamente -->
+                </select>
+                <label for="grafico-anio">Año:</label>
+                <select id="grafico-anio" onchange="actualizarGraficos()">
+                    <!-- Se llena dinámicamente -->
+                </select>
+            </div>
+            
+            <div class="graficos-container">
+                <div class="grafico-wrapper">
+                    <h4>Distribución de Gastos</h4>
+                    <canvas id="grafico-gastos" class="grafico-canvas"></canvas>
+                </div>
+                <div class="grafico-wrapper">
+                    <h4>Ingresos vs Gastos</h4>
+                    <canvas id="grafico-balance" class="grafico-canvas"></canvas>
+                </div>
+                <div class="grafico-wrapper">
+                    <h4>Tendencia Mensual</h4>
+                    <canvas id="grafico-tendencia" class="grafico-canvas"></canvas>
+                </div>
+                <div class="grafico-wrapper">
+                    <h4>Distribución de Ingresos</h4>
+                    <canvas id="grafico-ingresos" class="grafico-canvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE PRESUPUESTOS ==================== -->
+        <section>
+            <h2>💰 Presupuestos por Categoría</h2>
+            <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">
+                Establece límites de gasto mensuales por categoría para controlar mejor tus finanzas.
+            </p>
+            
+            <div class="presupuestos-grid" id="presupuestos-lista">
+                <!-- Se llena dinámicamente -->
+            </div>
+            
+            <div class="agregar-presupuesto-form">
+                <div class="campo">
+                    <label for="presupuesto-categoria">Categoría</label>
+                    <select id="presupuesto-categoria">
+                        <!-- Se llena dinámicamente -->
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="presupuesto-limite">Límite mensual ($)</label>
+                    <input type="number" id="presupuesto-limite" placeholder="Ej: 500000" min="0">
+                </div>
+                <button class="btn btn-primario" onclick="agregarPresupuesto()">Agregar Presupuesto</button>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE MOVIMIENTOS RECURRENTES ==================== -->
+        <section>
+            <h2>🔄 Movimientos Recurrentes</h2>
+            <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">
+                Configura ingresos o gastos que se repiten automáticamente (salario, suscripciones, arriendo).
+            </p>
+            
+            <div class="recurrentes-lista" id="recurrentes-lista">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div class="sin-datos" id="sin-recurrentes" style="display: none;">
+                No hay movimientos recurrentes configurados.
+            </div>
+            
+            <div class="agregar-categoria-form" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-borde);">
+                <div class="campo">
+                    <label for="recurrente-tipo">Tipo</label>
+                    <select id="recurrente-tipo" onchange="actualizarCategoriasRecurrente()">
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Gasto">Gasto</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="recurrente-categoria">Categoría</label>
+                    <select id="recurrente-categoria">
+                        <!-- Se llena dinámicamente -->
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="recurrente-descripcion">Descripción</label>
+                    <input type="text" id="recurrente-descripcion" placeholder="Ej: Salario mensual">
+                </div>
+                <div class="campo">
+                    <label for="recurrente-monto">Monto ($)</label>
+                    <input type="number" id="recurrente-monto" placeholder="Ej: 3000000" min="0">
+                </div>
+                <div class="campo">
+                    <label for="recurrente-frecuencia">Frecuencia</label>
+                    <select id="recurrente-frecuencia">
+                        <option value="semanal">Semanal</option>
+                        <option value="quincenal">Quincenal</option>
+                        <option value="mensual" selected>Mensual</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="recurrente-dia">Día del mes</label>
+                    <input type="number" id="recurrente-dia" placeholder="1-31" min="1" max="31" value="1">
+                </div>
+                <button class="btn btn-exito" onclick="agregarRecurrente()">Agregar Recurrente</button>
+            </div>
+        </section>
+
+        <!-- ==================== SECCIÓN DE IMPORTAR/EXPORTAR ==================== -->
+        <section>
+            <h2>📁 Importar y Exportar Datos</h2>
+            
+            <div class="herramientas">
+                <button class="btn btn-secundario" onclick="exportarCSV()">📥 Exportar CSV</button>
+                <button class="btn btn-secundario" onclick="exportarJSON()">📦 Exportar JSON Completo</button>
+            </div>
+            
+            <div class="importar-zona" id="zona-importar" onclick="document.getElementById('archivo-importar').click()">
+                <p>📂 Arrastra un archivo aquí o haz clic para importar</p>
+                <p style="font-size: 0.85rem;">Soporta archivos .json (backup completo) o .csv (movimientos)</p>
+                <input type="file" id="archivo-importar" class="importar-input" accept=".json,.csv" onchange="importarArchivo(event)">
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ==================== MODAL DE EDICIÓN ==================== -->
+    <div class="modal-overlay" id="modal-editar">
+        <div class="modal">
+            <h3>✏️ Editar Movimiento</h3>
+            <input type="hidden" id="editar-id">
+            <div class="formulario-grid">
+                <div class="campo">
+                    <label for="editar-tipo">Tipo</label>
+                    <select id="editar-tipo" onchange="actualizarCategoriasEditar()">
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Gasto">Gasto</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="editar-categoria">Categoría</label>
+                    <select id="editar-categoria"></select>
+                </div>
+                <div class="campo">
+                    <label for="editar-monto">Monto ($)</label>
+                    <input type="number" id="editar-monto" min="0.01" step="0.01">
+                </div>
+                <div class="campo">
+                    <label for="editar-fecha">Fecha</label>
+                    <input type="date" id="editar-fecha">
+                </div>
+                <div class="campo" style="grid-column: 1 / -1;">
+                    <label for="editar-descripcion">Descripción</label>
+                    <textarea id="editar-descripcion"></textarea>
+                </div>
+            </div>
+            <div class="modal-botones">
+                <button class="btn btn-secundario" onclick="cerrarModalEditar()">Cancelar</button>
+                <button class="btn btn-primario" onclick="guardarEdicion()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // ==================== VARIABLES GLOBALES ====================
+        
+        // Array para almacenar todos los movimientos
+        let movimientos = [];
+        
+        // Objetivo de ahorro mensual
+        let objetivoAhorro = 0;
+        
+        // Configuración de ordenamiento actual
+        let ordenActual = { campo: 'fecha', direccion: 'desc' };
+
+        // Tema actual de la aplicación
+        let temaActual = 'claro';
+
+        // Categorías predefinidas con iconos
+        const categoriasPredefinidas = {
+            Ingreso: [
+                { nombre: 'Salario', icono: '💼' },
+                { nombre: 'Freelance', icono: '💻' },
+                { nombre: 'Inversiones', icono: '📈' },
+                { nombre: 'Bonificaciones', icono: '🎁' },
+                { nombre: 'Ventas', icono: '🛒' },
+                { nombre: 'Alquiler', icono: '🏠' },
+                { nombre: 'Reembolsos', icono: '↩️' },
+                { nombre: 'Préstamos recibidos', icono: '🤝' },
+                { nombre: 'Otros ingresos', icono: '💰' }
+            ],
+            Gasto: [
+                { nombre: 'Comida', icono: '🍔' },
+                { nombre: 'Supermercado', icono: '🛒' },
+                { nombre: 'Transporte', icono: '🚗' },
+                { nombre: 'Combustible', icono: '⛽' },
+                { nombre: 'Servicios', icono: '💡' },
+                { nombre: 'Internet/Teléfono', icono: '📱' },
+                { nombre: 'Alquiler/Hipoteca', icono: '🏠' },
+                { nombre: 'Ocio', icono: '🎮' },
+                { nombre: 'Restaurantes', icono: '🍽️' },
+                { nombre: 'Salud', icono: '🏥' },
+                { nombre: 'Farmacia', icono: '💊' },
+                { nombre: 'Educación', icono: '📚' },
+                { nombre: 'Ropa', icono: '👕' },
+                { nombre: 'Hogar', icono: '🪑' },
+                { nombre: 'Mascotas', icono: '🐾' },
+                { nombre: 'Suscripciones', icono: '📺' },
+                { nombre: 'Gimnasio', icono: '🏋️' },
+                { nombre: 'Deudas', icono: '💳' },
+                { nombre: 'Regalos', icono: '🎁' },
+                { nombre: 'Viajes', icono: '✈️' },
+                { nombre: 'Impuestos', icono: '📋' },
+                { nombre: 'Seguros', icono: '🛡️' },
+                { nombre: 'Otros gastos', icono: '📦' }
+            ]
+        };
+
+        // Categorías personalizadas del usuario
+        let categoriasPersonalizadas = {
+            Ingreso: [],
+            Gasto: []
+        };
+
+        // Presupuestos por categoría
+        let presupuestos = {};
+
+        // Movimientos recurrentes
+        let movimientosRecurrentes = [];
+
+        // Instancias de gráficos Chart.js
+        let graficos = {};
+        
+        // ==================== INICIALIZACIÓN ====================
+        
+        /**
+         * Función que se ejecuta al cargar la página.
+         * Carga los datos guardados en localStorage y configura la fecha actual.
+         */
+        function inicializar() {
+            // Cargar datos desde localStorage si existen
+            cargarDatosLocalStorage();
+            
+            // Cargar tema guardado
+            cargarTema();
+            
+            // Establecer la fecha actual como valor por defecto
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha').value = hoy;
+            
+            // Configurar el evento de cambio de tipo para actualizar categorías
+            document.getElementById('tipo').addEventListener('change', actualizarCategoriasFormulario);
+            
+            // Actualizar todas las secciones de la interfaz
+            actualizarCategoriasFormulario();
+            renderizarCategoriasPersonalizadas();
+            actualizarResumen();
+            actualizarTabla();
+            actualizarObjetivoAhorro();
+            actualizarFiltroCategorias();
+            actualizarResumenCategorias();
+            
+            // Inicializar nuevas funcionalidades
+            inicializarGraficos();
+            actualizarPresupuestos();
+            actualizarRecurrentes();
+            actualizarCategoriasRecurrente();
+            cargarCategoriasPresupuesto();
+            verificarRecurrentesPendientes();
+            configurarImportacion();
+        }
+        
+        // ==================== FUNCIONES DE TEMA ====================
+
+        /**
+         * Cambia el tema de la aplicación.
+         * @param {string} tema - Nombre del tema ('claro', 'oscuro', 'naturaleza', 'oceano')
+         */
+        function cambiarTema(tema) {
+            temaActual = tema;
+            
+            // Aplicar tema al documento
+            if (tema === 'claro') {
+                document.documentElement.removeAttribute('data-tema');
+            } else {
+                document.documentElement.setAttribute('data-tema', tema);
+            }
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.tema-btn').forEach(btn => {
+                btn.classList.toggle('activo', btn.dataset.temaValor === tema);
+            });
+            
+            // Guardar preferencia
+            localStorage.setItem('finanzas_tema', tema);
+        }
+
+        /**
+         * Carga el tema guardado desde localStorage.
+         */
+        function cargarTema() {
+            const temaGuardado = localStorage.getItem('finanzas_tema');
+            if (temaGuardado) {
+                cambiarTema(temaGuardado);
+            }
+        }
+        
+        // ==================== FUNCIONES DE LOCALSTORAGE ====================
+        
+        /**
+         * Guarda los movimientos, categorías y el objetivo de ahorro en localStorage.
+         * Permite persistir los datos entre sesiones del navegador.
+         */
+        function guardarDatosLocalStorage() {
+            localStorage.setItem('finanzas_movimientos', JSON.stringify(movimientos));
+            localStorage.setItem('finanzas_objetivo', objetivoAhorro.toString());
+            localStorage.setItem('finanzas_categorias', JSON.stringify(categoriasPersonalizadas));
+            localStorage.setItem('finanzas_presupuestos', JSON.stringify(presupuestos));
+            localStorage.setItem('finanzas_recurrentes', JSON.stringify(movimientosRecurrentes));
+        }
+        
+        /**
+         * Carga los datos guardados desde localStorage.
+         * Si no hay datos guardados, mantiene los valores por defecto.
+         */
+        function cargarDatosLocalStorage() {
+            const movimientosGuardados = localStorage.getItem('finanzas_movimientos');
+            const objetivoGuardado = localStorage.getItem('finanzas_objetivo');
+            const categoriasGuardadas = localStorage.getItem('finanzas_categorias');
+            const presupuestosGuardados = localStorage.getItem('finanzas_presupuestos');
+            const recurrentesGuardados = localStorage.getItem('finanzas_recurrentes');
+            
+            if (movimientosGuardados) {
+                movimientos = JSON.parse(movimientosGuardados);
+            }
+            
+            if (objetivoGuardado) {
+                objetivoAhorro = parseFloat(objetivoGuardado);
+                document.getElementById('objetivo-monto').value = objetivoAhorro > 0 ? objetivoAhorro : '';
+            }
+
+            if (categoriasGuardadas) {
+                categoriasPersonalizadas = JSON.parse(categoriasGuardadas);
+            }
+
+            if (presupuestosGuardados) {
+                presupuestos = JSON.parse(presupuestosGuardados);
+            }
+
+            if (recurrentesGuardados) {
+                movimientosRecurrentes = JSON.parse(recurrentesGuardados);
+            }
+        }
+
+        // ==================== FUNCIONES DE CATEGORÍAS ====================
+
+        /**
+         * Obtiene todas las categorías (predefinidas + personalizadas) de un tipo.
+         * @param {string} tipo - 'Ingreso' o 'Gasto'
+         * @returns {Array} - Array de categorías con nombre e icono
+         */
+        function obtenerCategorias(tipo) {
+            const predefinidas = categoriasPredefinidas[tipo] || [];
+            const personalizadas = categoriasPersonalizadas[tipo] || [];
+            return [...predefinidas, ...personalizadas];
+        }
+
+        /**
+         * Actualiza el select de categorías según el tipo seleccionado en el formulario principal.
+         */
+        function actualizarCategoriasFormulario() {
+            const tipo = document.getElementById('tipo').value;
+            const selectCategoria = document.getElementById('categoria');
+            
+            selectCategoria.innerHTML = '<option value="">Seleccionar...</option>';
+            
+            if (tipo) {
+                const categorias = obtenerCategorias(tipo);
+                categorias.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.nombre;
+                    option.textContent = `${cat.icono} ${cat.nombre}`;
+                    selectCategoria.appendChild(option);
+                });
+            }
+        }
+
+        /**
+         * Actualiza el select de categorías en el modal de edición.
+         */
+        function actualizarCategoriasEditar() {
+            const tipo = document.getElementById('editar-tipo').value;
+            const selectCategoria = document.getElementById('editar-categoria');
+            
+            selectCategoria.innerHTML = '';
+            
+            const categorias = obtenerCategorias(tipo);
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nombre;
+                option.textContent = `${cat.icono} ${cat.nombre}`;
+                selectCategoria.appendChild(option);
+            });
+        }
+
+        /**
+         * Agrega una nueva categoría personalizada.
+         */
+        function agregarCategoriaPersonalizada() {
+            const tipo = document.getElementById('nueva-categoria-tipo').value;
+            const nombre = document.getElementById('nueva-categoria-nombre').value.trim();
+            const icono = document.getElementById('nueva-categoria-icono').value.trim() || '📌';
+
+            if (!nombre) {
+                mostrarMensaje('Por favor, ingresa un nombre para la categoría.', 'error');
+                return;
+            }
+
+            // Verificar si ya existe
+            const todasCategorias = obtenerCategorias(tipo);
+            if (todasCategorias.some(c => c.nombre.toLowerCase() === nombre.toLowerCase())) {
+                mostrarMensaje('Esta categoría ya existe.', 'error');
+                return;
+            }
+
+            categoriasPersonalizadas[tipo].push({ nombre, icono });
+            guardarDatosLocalStorage();
+
+            // Limpiar campos
+            document.getElementById('nueva-categoria-nombre').value = '';
+            document.getElementById('nueva-categoria-icono').value = '';
+
+            // Actualizar UI
+            renderizarCategoriasPersonalizadas();
+            actualizarCategoriasFormulario();
+            actualizarFiltroCategorias();
+
+            mostrarMensaje(`Categoría "${nombre}" agregada correctamente.`, 'exito');
+        }
+
+        /**
+         * Elimina una categoría personalizada.
+         * @param {string} tipo - 'Ingreso' o 'Gasto'
+         * @param {string} nombre - Nombre de la categoría a eliminar
+         */
+        function eliminarCategoriaPersonalizada(tipo, nombre) {
+            // Verificar si hay movimientos con esta categoría
+            const movimientosConCategoria = movimientos.filter(m => m.categoria === nombre);
+            
+            if (movimientosConCategoria.length > 0) {
+                if (!confirm(`Hay ${movimientosConCategoria.length} movimiento(s) con esta categoría. ¿Deseas eliminarla de todos modos? Los movimientos mantendrán el nombre de la categoría.`)) {
+                    return;
+                }
+            }
+
+            categoriasPersonalizadas[tipo] = categoriasPersonalizadas[tipo].filter(c => c.nombre !== nombre);
+            guardarDatosLocalStorage();
+
+            renderizarCategoriasPersonalizadas();
+            actualizarCategoriasFormulario();
+            actualizarFiltroCategorias();
+
+            mostrarMensaje('Categoría eliminada.', 'exito');
+        }
+
+        /**
+         * Renderiza las listas de categorías en la sección de gestión.
+         */
+        function renderizarCategoriasPersonalizadas() {
+            // Renderizar categorías de ingreso
+            const listaIngresos = document.getElementById('lista-categorias-ingreso');
+            listaIngresos.innerHTML = '';
+            
+            obtenerCategorias('Ingreso').forEach(cat => {
+                const esPersonalizada = categoriasPersonalizadas.Ingreso.some(c => c.nombre === cat.nombre);
+                const tag = document.createElement('span');
+                tag.className = 'tag-categoria ingreso';
+                tag.innerHTML = `
+                    ${cat.icono} ${cat.nombre}
+                    ${esPersonalizada ? `<span class="eliminar-tag" onclick="eliminarCategoriaPersonalizada('Ingreso', '${cat.nombre}')" title="Eliminar">×</span>` : ''}
+                `;
+                listaIngresos.appendChild(tag);
+            });
+
+            // Renderizar categorías de gasto
+            const listaGastos = document.getElementById('lista-categorias-gasto');
+            listaGastos.innerHTML = '';
+            
+            obtenerCategorias('Gasto').forEach(cat => {
+                const esPersonalizada = categoriasPersonalizadas.Gasto.some(c => c.nombre === cat.nombre);
+                const tag = document.createElement('span');
+                tag.className = 'tag-categoria gasto';
+                tag.innerHTML = `
+                    ${cat.icono} ${cat.nombre}
+                    ${esPersonalizada ? `<span class="eliminar-tag" onclick="eliminarCategoriaPersonalizada('Gasto', '${cat.nombre}')" title="Eliminar">×</span>` : ''}
+                `;
+                listaGastos.appendChild(tag);
+            });
+        }
+
+        /**
+         * Obtiene el icono de una categoría por su nombre.
+         * @param {string} nombre - Nombre de la categoría
+         * @returns {string} - Emoji del icono
+         */
+        function obtenerIconoCategoria(nombre) {
+            for (const tipo of ['Ingreso', 'Gasto']) {
+                const categorias = obtenerCategorias(tipo);
+                const cat = categorias.find(c => c.nombre === nombre);
+                if (cat) return cat.icono;
+            }
+            return '📌';
+        }
+        
+        // ==================== FUNCIONES DE MOVIMIENTOS ====================
+        
+        /**
+         * Agrega un nuevo movimiento al listado.
+         * Valida los campos, crea el objeto del movimiento y actualiza la interfaz.
+         * @param {Event} evento - Evento del formulario
+         */
+        function agregarMovimiento(evento) {
+            evento.preventDefault();
+            
+            // Obtener valores del formulario
+            const tipo = document.getElementById('tipo').value;
+            const categoria = document.getElementById('categoria').value;
+            const monto = parseFloat(document.getElementById('monto').value);
+            const fecha = document.getElementById('fecha').value;
+            const descripcion = document.getElementById('descripcion').value.trim();
+            
+            // Validar campos requeridos
+            if (!validarCampos(tipo, categoria, monto, fecha)) {
+                return;
+            }
+            
+            // Crear objeto del nuevo movimiento
+            const nuevoMovimiento = {
+                id: Date.now(), // ID único basado en timestamp
+                tipo: tipo,
+                categoria: categoria,
+                monto: monto,
+                fecha: fecha,
+                descripcion: descripcion || '-'
+            };
+            
+            // Agregar al array de movimientos
+            movimientos.push(nuevoMovimiento);
+            
+            // Guardar en localStorage
+            guardarDatosLocalStorage();
+            
+            // Actualizar toda la interfaz
+            actualizarResumen();
+            actualizarTabla();
+            actualizarObjetivoAhorro();
+            actualizarFiltroCategorias();
+            actualizarResumenCategorias();
+            
+            // Limpiar formulario
+            document.getElementById('formulario-movimiento').reset();
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha').value = hoy;
+            actualizarCategoriasFormulario();
+            
+            // Mostrar mensaje de éxito
+            mostrarMensaje('¡Movimiento agregado correctamente!', 'exito');
+        }
+        
+        /**
+         * Valida los campos del formulario antes de agregar un movimiento.
+         * @param {string} tipo - Tipo de transacción
+         * @param {string} categoria - Categoría seleccionada
+         * @param {number} monto - Monto de la transacción
+         * @param {string} fecha - Fecha de la transacción
+         * @returns {boolean} - True si todos los campos son válidos
+         */
+        function validarCampos(tipo, categoria, monto, fecha) {
+            // Validar tipo
+            if (!tipo) {
+                mostrarMensaje('Por favor, selecciona un tipo de transacción.', 'error');
+                return false;
+            }
+            
+            // Validar categoría
+            if (!categoria) {
+                mostrarMensaje('Por favor, selecciona una categoría.', 'error');
+                return false;
+            }
+            
+            // Validar monto
+            if (isNaN(monto) || monto <= 0) {
+                mostrarMensaje('El monto debe ser un número positivo.', 'error');
+                return false;
+            }
+            
+            // Validar fecha
+            if (!fecha) {
+                mostrarMensaje('Por favor, selecciona una fecha.', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        /**
+         * Elimina un movimiento del listado por su ID.
+         * @param {number} id - ID del movimiento a eliminar
+         */
+        function eliminarMovimiento(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este movimiento?')) {
+                movimientos = movimientos.filter(m => m.id !== id);
+                guardarDatosLocalStorage();
+                actualizarResumen();
+                actualizarTabla();
+                actualizarObjetivoAhorro();
+                actualizarResumenCategorias();
+                mostrarMensaje('Movimiento eliminado correctamente.', 'exito');
+            }
+        }
+
+        /**
+         * Abre el modal para editar un movimiento.
+         * @param {number} id - ID del movimiento a editar
+         */
+        function abrirModalEditar(id) {
+            const mov = movimientos.find(m => m.id === id);
+            if (!mov) return;
+
+            document.getElementById('editar-id').value = id;
+            document.getElementById('editar-tipo').value = mov.tipo;
+            actualizarCategoriasEditar();
+            document.getElementById('editar-categoria').value = mov.categoria;
+            document.getElementById('editar-monto').value = mov.monto;
+            document.getElementById('editar-fecha').value = mov.fecha;
+            document.getElementById('editar-descripcion').value = mov.descripcion === '-' ? '' : mov.descripcion;
+
+            document.getElementById('modal-editar').classList.add('activo');
+        }
+
+        /**
+         * Cierra el modal de edición.
+         */
+        function cerrarModalEditar() {
+            document.getElementById('modal-editar').classList.remove('activo');
+        }
+
+        /**
+         * Guarda los cambios de edición de un movimiento.
+         */
+        function guardarEdicion() {
+            const id = parseInt(document.getElementById('editar-id').value);
+            const tipo = document.getElementById('editar-tipo').value;
+            const categoria = document.getElementById('editar-categoria').value;
+            const monto = parseFloat(document.getElementById('editar-monto').value);
+            const fecha = document.getElementById('editar-fecha').value;
+            const descripcion = document.getElementById('editar-descripcion').value.trim();
+
+            if (!validarCampos(tipo, categoria, monto, fecha)) {
+                return;
+            }
+
+            const index = movimientos.findIndex(m => m.id === id);
+            if (index !== -1) {
+                movimientos[index] = {
+                    ...movimientos[index],
+                    tipo,
+                    categoria,
+                    monto,
+                    fecha,
+                    descripcion: descripcion || '-'
+                };
+
+                guardarDatosLocalStorage();
+                actualizarResumen();
+                actualizarTabla();
+                actualizarObjetivoAhorro();
+                actualizarResumenCategorias();
+                cerrarModalEditar();
+                mostrarMensaje('Movimiento actualizado correctamente.', 'exito');
+            }
+        }
+        
+        // ==================== FUNCIONES DE ACTUALIZACIÓN DE UI ====================
+        
+        /**
+         * Recalcula y actualiza los totales de ingresos, gastos y balance.
+         * Filtra los movimientos del mes actual para los cálculos.
+         */
+        function actualizarResumen() {
+            const mesActual = new Date().getMonth();
+            const anioActual = new Date().getFullYear();
+            
+            // Filtrar movimientos del mes actual
+            const movimientosMes = movimientos.filter(m => {
+                const fechaMov = new Date(m.fecha);
+                return fechaMov.getMonth() === mesActual && fechaMov.getFullYear() === anioActual;
+            });
+            
+            // Calcular totales
+            const movIngreso = movimientosMes.filter(m => m.tipo === 'Ingreso');
+            const movGasto = movimientosMes.filter(m => m.tipo === 'Gasto');
+            
+            const ingresos = movIngreso.reduce((sum, m) => sum + m.monto, 0);
+            const gastos = movGasto.reduce((sum, m) => sum + m.monto, 0);
+            const balance = ingresos - gastos;
+            
+            // Actualizar elementos del DOM
+            document.getElementById('total-ingresos').textContent = formatearMoneda(ingresos);
+            document.getElementById('total-gastos').textContent = formatearMoneda(gastos);
+            document.getElementById('count-ingresos').textContent = `${movIngreso.length} transaccion${movIngreso.length !== 1 ? 'es' : ''}`;
+            document.getElementById('count-gastos').textContent = `${movGasto.length} transaccion${movGasto.length !== 1 ? 'es' : ''}`;
+            
+            const elementoBalance = document.getElementById('balance');
+            elementoBalance.textContent = formatearMoneda(balance);
+            elementoBalance.classList.toggle('negativo', balance < 0);
+
+            // Estado del balance
+            const estadoBalance = document.getElementById('balance-estado');
+            if (balance > 0) {
+                estadoBalance.textContent = '¡Vas bien! 👍';
+            } else if (balance < 0) {
+                estadoBalance.textContent = 'Atención: Gastos > Ingresos';
+            } else {
+                estadoBalance.textContent = 'Neutro';
+            }
+
+            // Total histórico de transacciones
+            document.getElementById('total-transacciones').textContent = movimientos.length;
+        }
+        
+        /**
+         * Renderiza los movimientos en la tabla aplicando filtros y ordenamiento.
+         * Muestra un mensaje si no hay movimientos que mostrar.
+         */
+        function actualizarTabla() {
+            const cuerpoTabla = document.getElementById('cuerpo-tabla');
+            const sinDatos = document.getElementById('sin-datos');
+            
+            // Obtener movimientos filtrados
+            let movimientosFiltrados = obtenerMovimientosFiltrados();
+            
+            // Aplicar ordenamiento
+            movimientosFiltrados = ordenarMovimientos(movimientosFiltrados);
+            
+            // Limpiar tabla
+            cuerpoTabla.innerHTML = '';
+            
+            // Mostrar mensaje si no hay datos
+            if (movimientosFiltrados.length === 0) {
+                sinDatos.style.display = 'block';
+                return;
+            }
+            
+            sinDatos.style.display = 'none';
+            
+            // Renderizar cada movimiento como fila de la tabla
+            movimientosFiltrados.forEach(mov => {
+                const fila = document.createElement('tr');
+                fila.className = 'fade-in';
+                
+                const clasesTipo = mov.tipo === 'Ingreso' ? 'tipo-ingreso' : 'tipo-gasto';
+                const clasesMonto = mov.tipo === 'Ingreso' ? 'monto-positivo' : 'monto-negativo';
+                const signo = mov.tipo === 'Ingreso' ? '+' : '-';
+                const icono = obtenerIconoCategoria(mov.categoria);
+                
+                fila.innerHTML = `
+                    <td>${formatearFecha(mov.fecha)}</td>
+                    <td class="${clasesTipo}">${mov.tipo}</td>
+                    <td>${icono} ${mov.categoria}</td>
+                    <td>${mov.descripcion}</td>
+                    <td class="${clasesMonto}">${signo}${formatearMoneda(mov.monto)}</td>
+                    <td class="acciones-celda">
+                        <button class="btn btn-editar" onclick="abrirModalEditar(${mov.id})">
+                            Editar
+                        </button>
+                        <button class="btn btn-eliminar" onclick="eliminarMovimiento(${mov.id})">
+                            Eliminar
+                        </button>
+                    </td>
+                `;
+                
+                cuerpoTabla.appendChild(fila);
+            });
+        }
+        
+        /**
+         * Recalcula el porcentaje de cumplimiento del objetivo de ahorro.
+         * Actualiza la barra de progreso y los indicadores visuales.
+         */
+        function actualizarObjetivoAhorro() {
+            const mesActual = new Date().getMonth();
+            const anioActual = new Date().getFullYear();
+            
+            // Filtrar movimientos del mes actual
+            const movimientosMes = movimientos.filter(m => {
+                const fechaMov = new Date(m.fecha);
+                return fechaMov.getMonth() === mesActual && fechaMov.getFullYear() === anioActual;
+            });
+            
+            // Calcular ahorro del mes (ingresos - gastos)
+            const ingresos = movimientosMes
+                .filter(m => m.tipo === 'Ingreso')
+                .reduce((sum, m) => sum + m.monto, 0);
+            
+            const gastos = movimientosMes
+                .filter(m => m.tipo === 'Gasto')
+                .reduce((sum, m) => sum + m.monto, 0);
+            
+            const ahorrado = Math.max(0, ingresos - gastos);
+            
+            // Calcular porcentaje
+            let porcentaje = 0;
+            if (objetivoAhorro > 0) {
+                porcentaje = Math.min(100, (ahorrado / objetivoAhorro) * 100);
+            }
+            
+            // Actualizar elementos del DOM
+            document.getElementById('monto-ahorrado').textContent = formatearMoneda(ahorrado);
+            document.getElementById('meta-ahorro').textContent = formatearMoneda(objetivoAhorro);
+            document.getElementById('progreso-relleno').style.width = `${porcentaje}%`;
+            document.getElementById('progreso-porcentaje').textContent = `${porcentaje.toFixed(1)}%`;
+            document.getElementById('ahorro-porcentaje').textContent = `${porcentaje.toFixed(1)}%`;
+
+            // Estado del ahorro
+            const estadoAhorro = document.getElementById('ahorro-estado');
+            if (objetivoAhorro === 0) {
+                estadoAhorro.textContent = 'Sin objetivo definido';
+            } else if (porcentaje >= 100) {
+                estadoAhorro.textContent = '¡Meta alcanzada! 🎉';
+            } else if (porcentaje >= 50) {
+                estadoAhorro.textContent = '¡Vas por buen camino!';
+            } else {
+                estadoAhorro.textContent = `Faltan ${formatearMoneda(objetivoAhorro - ahorrado)}`;
+            }
+        }
+        
+        /**
+         * Guarda el objetivo de ahorro ingresado por el usuario.
+         */
+        function guardarObjetivo() {
+            const montoObjetivo = parseFloat(document.getElementById('objetivo-monto').value);
+            
+            if (isNaN(montoObjetivo) || montoObjetivo < 0) {
+                mostrarMensaje('Por favor, ingresa un monto válido para el objetivo.', 'error');
+                return;
+            }
+            
+            objetivoAhorro = montoObjetivo;
+            guardarDatosLocalStorage();
+            actualizarObjetivoAhorro();
+            mostrarMensaje('¡Objetivo de ahorro establecido correctamente!', 'exito');
+        }
+
+        /**
+         * Actualiza el resumen visual por categorías del mes actual.
+         */
+        function actualizarResumenCategorias() {
+            const mesActual = new Date().getMonth();
+            const anioActual = new Date().getFullYear();
+            
+            const movimientosMes = movimientos.filter(m => {
+                const fechaMov = new Date(m.fecha);
+                return fechaMov.getMonth() === mesActual && fechaMov.getFullYear() === anioActual;
+            });
+
+            // Agrupar por categoría
+            const porCategoria = {};
+            movimientosMes.forEach(m => {
+                if (!porCategoria[m.categoria]) {
+                    porCategoria[m.categoria] = { total: 0, tipo: m.tipo };
+                }
+                porCategoria[m.categoria].total += m.monto;
+            });
+
+            const contenedor = document.getElementById('resumen-categorias');
+            const sinCategorias = document.getElementById('sin-categorias');
+
+            if (Object.keys(porCategoria).length === 0) {
+                contenedor.innerHTML = '';
+                sinCategorias.style.display = 'block';
+                return;
+            }
+
+            sinCategorias.style.display = 'none';
+
+            // Calcular máximo para las barras
+            const maxMonto = Math.max(...Object.values(porCategoria).map(c => c.total));
+
+            // Ordenar por monto descendente
+            const categoriasOrdenadas = Object.entries(porCategoria).sort((a, b) => b[1].total - a[1].total);
+
+            contenedor.innerHTML = categoriasOrdenadas.map(([nombre, data]) => {
+                const icono = obtenerIconoCategoria(nombre);
+                const porcentajeBarra = (data.total / maxMonto) * 100;
+                const esGasto = data.tipo === 'Gasto';
+                
+                return `
+                    <div class="categoria-item fade-in">
+                        <div class="categoria-icono">${icono}</div>
+                        <div class="categoria-info">
+                            <div class="categoria-nombre">${nombre}</div>
+                            <div class="categoria-barra">
+                                <div class="categoria-barra-relleno ${esGasto ? 'gasto' : 'ingreso'}" style="width: ${porcentajeBarra}%"></div>
+                            </div>
+                        </div>
+                        <div class="categoria-monto ${esGasto ? 'gasto' : 'ingreso'}">${esGasto ? '-' : '+'}${formatearMoneda(data.total)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ==================== FUNCIONES DE FILTRADO Y ORDENAMIENTO ====================
+        
+        /**
+         * Obtiene los movimientos filtrados según los criterios seleccionados.
+         * @returns {Array} - Array de movimientos filtrados
+         */
+        function obtenerMovimientosFiltrados() {
+            const filtroTipo = document.getElementById('filtro-tipo').value;
+            const filtroCategoria = document.getElementById('filtro-categoria').value;
+            const filtroFechaDesde = document.getElementById('filtro-fecha-desde').value;
+            const filtroFechaHasta = document.getElementById('filtro-fecha-hasta').value;
+            const filtroBusqueda = document.getElementById('filtro-busqueda').value.toLowerCase();
+            
+            return movimientos.filter(m => {
+                const cumpleTipo = !filtroTipo || m.tipo === filtroTipo;
+                const cumpleCategoria = !filtroCategoria || m.categoria === filtroCategoria;
+                const cumpleFechaDesde = !filtroFechaDesde || m.fecha >= filtroFechaDesde;
+                const cumpleFechaHasta = !filtroFechaHasta || m.fecha <= filtroFechaHasta;
+                const cumpleBusqueda = !filtroBusqueda || 
+                    m.descripcion.toLowerCase().includes(filtroBusqueda) ||
+                    m.categoria.toLowerCase().includes(filtroBusqueda);
+                return cumpleTipo && cumpleCategoria && cumpleFechaDesde && cumpleFechaHasta && cumpleBusqueda;
+            });
+        }
+        
+        /**
+         * Aplica los filtros seleccionados y actualiza la tabla.
+         */
+        function aplicarFiltros() {
+            actualizarTabla();
+        }
+        
+        /**
+         * Limpia todos los filtros y muestra todos los movimientos.
+         */
+        function limpiarFiltros() {
+            document.getElementById('filtro-tipo').value = '';
+            document.getElementById('filtro-categoria').value = '';
+            document.getElementById('filtro-fecha-desde').value = '';
+            document.getElementById('filtro-fecha-hasta').value = '';
+            document.getElementById('filtro-busqueda').value = '';
+            actualizarTabla();
+        }
+        
+        /**
+         * Actualiza las opciones del filtro de categorías basándose en los movimientos existentes.
+         */
+        function actualizarFiltroCategorias() {
+            const selectCategoria = document.getElementById('filtro-categoria');
+            const categorias = [...new Set(movimientos.map(m => m.categoria))];
+            
+            // Mantener el valor seleccionado si existe
+            const valorActual = selectCategoria.value;
+            
+            // Reconstruir opciones
+            selectCategoria.innerHTML = '<option value="">Todas</option>';
+            categorias.sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                const icono = obtenerIconoCategoria(cat);
+                option.textContent = `${icono} ${cat}`;
+                selectCategoria.appendChild(option);
+            });
+            
+            // Restaurar selección si es válida
+            if (categorias.includes(valorActual)) {
+                selectCategoria.value = valorActual;
+            }
+        }
+        
+        /**
+         * Ordena los movimientos según el campo y dirección especificados.
+         * @param {Array} movimientos - Array de movimientos a ordenar
+         * @returns {Array} - Array de movimientos ordenados
+         */
+        function ordenarMovimientos(movimientos) {
+            const { campo, direccion } = ordenActual;
+            
+            return [...movimientos].sort((a, b) => {
+                let valorA = a[campo];
+                let valorB = b[campo];
+                
+                // Convertir a números para comparación de montos
+                if (campo === 'monto') {
+                    valorA = parseFloat(valorA);
+                    valorB = parseFloat(valorB);
+                }
+                
+                // Comparación
+                if (valorA < valorB) return direccion === 'asc' ? -1 : 1;
+                if (valorA > valorB) return direccion === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        /**
+         * Cambia el ordenamiento de la tabla al hacer clic en un encabezado.
+         * @param {string} campo - Campo por el cual ordenar
+         */
+        function ordenarTabla(campo) {
+            // Limpiar indicadores anteriores
+            document.querySelectorAll('th').forEach(th => th.classList.remove('ordenado'));
+            document.querySelectorAll('.flecha').forEach(f => f.textContent = '');
+            
+            // Alternar dirección si es el mismo campo
+            if (ordenActual.campo === campo) {
+                ordenActual.direccion = ordenActual.direccion === 'asc' ? 'desc' : 'asc';
+            } else {
+                ordenActual.campo = campo;
+                ordenActual.direccion = 'desc';
+            }
+            
+            // Actualizar indicador visual
+            const flecha = document.getElementById(`flecha-${campo}`);
+            if (flecha) {
+                flecha.textContent = ordenActual.direccion === 'asc' ? '▲' : '▼';
+                flecha.parentElement.classList.add('ordenado');
+            }
+            
+            actualizarTabla();
+        }
+
+        // ==================== FUNCIONES DE EXPORTACIÓN ====================
+
+        /**
+         * Exporta los movimientos a un archivo CSV.
+         */
+        function exportarCSV() {
+            if (movimientos.length === 0) {
+                mostrarMensaje('No hay movimientos para exportar.', 'error');
+                return;
+            }
+
+            const headers = ['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto'];
+            const filas = movimientos.map(m => [
+                m.fecha,
+                m.tipo,
+                m.categoria,
+                `"${m.descripcion.replace(/"/g, '""')}"`,
+                m.monto
+            ]);
+
+            const csv = [headers.join(','), ...filas.map(f => f.join(','))].join('\n');
+            descargarArchivo(csv, 'finanzas_movimientos.csv', 'text/csv');
+            mostrarMensaje('Archivo CSV exportado correctamente.', 'exito');
+        }
+
+        /**
+         * Exporta todos los datos a un archivo JSON.
+         */
+        function exportarJSON() {
+            const datos = {
+                movimientos,
+                objetivoAhorro,
+                categoriasPersonalizadas,
+                fechaExportacion: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(datos, null, 2);
+            descargarArchivo(json, 'finanzas_backup.json', 'application/json');
+            mostrarMensaje('Backup JSON exportado correctamente.', 'exito');
+        }
+
+        /**
+         * Descarga un archivo con el contenido especificado.
+         * @param {string} contenido - Contenido del archivo
+         * @param {string} nombreArchivo - Nombre del archivo
+         * @param {string} tipo - Tipo MIME del archivo
+         */
+        function descargarArchivo(contenido, nombreArchivo, tipo) {
+            const blob = new Blob([contenido], { type: tipo });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /**
+         * Limpia todos los datos de la aplicación.
+         */
+        function limpiarTodosDatos() {
+            if (confirm('⚠️ ¿Estás seguro de que deseas eliminar TODOS los datos?\n\nEsta acción eliminará:\n- Todos los movimientos\n- El objetivo de ahorro\n- Las categorías personalizadas\n\nEsta acción no se puede deshacer.')) {
+                if (confirm('Esta es tu última oportunidad. ¿Realmente deseas eliminar todo?')) {
+                    movimientos = [];
+                    objetivoAhorro = 0;
+                    categoriasPersonalizadas = { Ingreso: [], Gasto: [] };
+                    
+                    localStorage.removeItem('finanzas_movimientos');
+                    localStorage.removeItem('finanzas_objetivo');
+                    localStorage.removeItem('finanzas_categorias');
+
+                    document.getElementById('objetivo-monto').value = '';
+                    
+                    actualizarResumen();
+                    actualizarTabla();
+                    actualizarObjetivoAhorro();
+                    actualizarFiltroCategorias();
+                    actualizarResumenCategorias();
+                    renderizarCategoriasPersonalizadas();
+                    actualizarCategoriasFormulario();
+
+                    mostrarMensaje('Todos los datos han sido eliminados.', 'exito');
+                }
+            }
+        }
+        
+        // ==================== FUNCIONES AUXILIARES ====================
+        
+        /**
+         * Formatea un número como moneda con separadores de miles.
+         * @param {number} monto - Monto a formatear
+         * @returns {string} - Monto formateado como moneda
+         */
+        function formatearMoneda(monto) {
+            return '$' + monto.toLocaleString('es-CO', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+        
+        /**
+         * Formatea una fecha en formato legible (día/mes/año).
+         * @param {string} fecha - Fecha en formato ISO
+         * @returns {string} - Fecha formateada
+         */
+        function formatearFecha(fecha) {
+            const opciones = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', opciones);
+        }
+        
+        /**
+         * Muestra un mensaje temporal al usuario.
+         * @param {string} texto - Texto del mensaje
+         * @param {string} tipo - Tipo de mensaje ('exito' o 'error')
+         */
+        function mostrarMensaje(texto, tipo) {
+            const mensaje = document.getElementById('mensaje');
+            mensaje.textContent = texto;
+            mensaje.className = `mensaje ${tipo}`;
+            
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                mensaje.className = 'mensaje';
+            }, 3000);
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        document.getElementById('modal-editar').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModalEditar();
+            }
+        });
+
+        // ==================== FUNCIONES DE GRÁFICOS ====================
+
+        /**
+         * Inicializa los selectores de período y crea los gráficos
+         */
+        function inicializarGraficos() {
+            // Llenar selector de meses
+            const selectMes = document.getElementById('grafico-mes');
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            
+            const mesActual = new Date().getMonth();
+            meses.forEach((mes, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = mes;
+                if (index === mesActual) option.selected = true;
+                selectMes.appendChild(option);
+            });
+
+            // Llenar selector de años
+            const selectAnio = document.getElementById('grafico-anio');
+            const anioActual = new Date().getFullYear();
+            for (let anio = anioActual - 5; anio <= anioActual + 1; anio++) {
+                const option = document.createElement('option');
+                option.value = anio;
+                option.textContent = anio;
+                if (anio === anioActual) option.selected = true;
+                selectAnio.appendChild(option);
+            }
+
+            actualizarGraficos();
+        }
+
+        /**
+         * Actualiza todos los gráficos con los datos del período seleccionado
+         */
+        function actualizarGraficos() {
+            const mes = parseInt(document.getElementById('grafico-mes').value);
+            const anio = parseInt(document.getElementById('grafico-anio').value);
+
+            // Filtrar movimientos del período
+            const movimientosPeriodo = movimientos.filter(m => {
+                const fecha = new Date(m.fecha);
+                return fecha.getMonth() === mes && fecha.getFullYear() === anio;
+            });
+
+            // Destruir gráficos anteriores si existen
+            Object.values(graficos).forEach(g => g.destroy());
+            graficos = {};
+
+            // Gráfico de distribución de gastos
+            crearGraficoGastos(movimientosPeriodo);
+            
+            // Gráfico de ingresos vs gastos
+            crearGraficoBalance(movimientosPeriodo);
+            
+            // Gráfico de tendencia mensual
+            crearGraficoTendencia();
+            
+            // Gráfico de distribución de ingresos
+            crearGraficoIngresos(movimientosPeriodo);
+        }
+
+        function crearGraficoGastos(movimientos) {
+            const gastos = movimientos.filter(m => m.tipo === 'Gasto');
+            const porCategoria = {};
+            
+            gastos.forEach(m => {
+                porCategoria[m.categoria] = (porCategoria[m.categoria] || 0) + m.monto;
+            });
+
+            const ctx = document.getElementById('grafico-gastos').getContext('2d');
+            graficos.gastos = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(porCategoria),
+                    datasets: [{
+                        data: Object.values(porCategoria),
+                        backgroundColor: [
+                            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+                            '#1abc9c', '#e91e63', '#00bcd4', '#ff9800', '#795548'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        function crearGraficoIngresos(movimientos) {
+            const ingresos = movimientos.filter(m => m.tipo === 'Ingreso');
+            const porCategoria = {};
+            
+            ingresos.forEach(m => {
+                porCategoria[m.categoria] = (porCategoria[m.categoria] || 0) + m.monto;
+            });
+
+            const ctx = document.getElementById('grafico-ingresos').getContext('2d');
+            graficos.ingresos = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(porCategoria),
+                    datasets: [{
+                        data: Object.values(porCategoria),
+                        backgroundColor: [
+                            '#2ecc71', '#27ae60', '#1abc9c', '#16a085', '#3498db',
+                            '#2980b9', '#9b59b6', '#8e44ad', '#f39c12', '#e67e22'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        function crearGraficoBalance(movimientos) {
+            const ingresos = movimientos.filter(m => m.tipo === 'Ingreso')
+                .reduce((sum, m) => sum + m.monto, 0);
+            const gastos = movimientos.filter(m => m.tipo === 'Gasto')
+                .reduce((sum, m) => sum + m.monto, 0);
+
+            const ctx = document.getElementById('grafico-balance').getContext('2d');
+            graficos.balance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ingresos', 'Gastos', 'Balance'],
+                    datasets: [{
+                        data: [ingresos, gastos, ingresos - gastos],
+                        backgroundColor: ['#2ecc71', '#e74c3c', ingresos - gastos >= 0 ? '#3498db' : '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function crearGraficoTendencia() {
+            const ultimos6Meses = [];
+            const ingresosMes = [];
+            const gastosMes = [];
+            
+            for (let i = 5; i >= 0; i--) {
+                const fecha = new Date();
+                fecha.setMonth(fecha.getMonth() - i);
+                const mes = fecha.getMonth();
+                const anio = fecha.getFullYear();
+                
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                              'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                ultimos6Meses.push(meses[mes]);
+                
+                const movsMes = movimientos.filter(m => {
+                    const f = new Date(m.fecha);
+                    return f.getMonth() === mes && f.getFullYear() === anio;
+                });
+                
+                ingresosMes.push(movsMes.filter(m => m.tipo === 'Ingreso')
+                    .reduce((sum, m) => sum + m.monto, 0));
+                gastosMes.push(movsMes.filter(m => m.tipo === 'Gasto')
+                    .reduce((sum, m) => sum + m.monto, 0));
+            }
+
+            const ctx = document.getElementById('grafico-tendencia').getContext('2d');
+            graficos.tendencia = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ultimos6Meses,
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: ingresosMes,
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Gastos',
+                            data: gastosMes,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // ==================== FUNCIONES DE PRESUPUESTOS ====================
+
+        /**
+         * Carga las categorías de gasto en el selector de presupuestos
+         */
+        function cargarCategoriasPresupuesto() {
+            const select = document.getElementById('presupuesto-categoria');
+            select.innerHTML = '';
+            
+            const categoriasGasto = obtenerCategorias('Gasto');
+            categoriasGasto.forEach(cat => {
+                if (!presupuestos[cat.nombre]) {
+                    const option = document.createElement('option');
+                    option.value = cat.nombre;
+                    option.textContent = `${cat.icono} ${cat.nombre}`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        /**
+         * Agrega un nuevo presupuesto
+         */
+        function agregarPresupuesto() {
+            const categoria = document.getElementById('presupuesto-categoria').value;
+            const limite = parseFloat(document.getElementById('presupuesto-limite').value);
+
+            if (!categoria || isNaN(limite) || limite <= 0) {
+                mostrarMensaje('Por favor, completa todos los campos correctamente.', 'error');
+                return;
+            }
+
+            presupuestos[categoria] = limite;
+            guardarDatosLocalStorage();
+            actualizarPresupuestos();
+            cargarCategoriasPresupuesto();
+            document.getElementById('presupuesto-limite').value = '';
+            mostrarMensaje('Presupuesto agregado correctamente.', 'exito');
+        }
+
+        /**
+         * Elimina un presupuesto
+         */
+        function eliminarPresupuesto(categoria) {
+            if (confirm(`¿Eliminar el presupuesto de ${categoria}?`)) {
+                delete presupuestos[categoria];
+                guardarDatosLocalStorage();
+                actualizarPresupuestos();
+                cargarCategoriasPresupuesto();
+            }
+        }
+
+        /**
+         * Actualiza la visualización de presupuestos
+         */
+        function actualizarPresupuestos() {
+            const contenedor = document.getElementById('presupuestos-lista');
+            const mesActual = new Date().getMonth();
+            const anioActual = new Date().getFullYear();
+
+            if (Object.keys(presupuestos).length === 0) {
+                contenedor.innerHTML = '<p class="sin-datos">No hay presupuestos configurados.</p>';
+                return;
+            }
+
+            // Calcular gastos por categoría del mes actual
+            const gastosPorCategoria = {};
+            movimientos.filter(m => {
+                const fecha = new Date(m.fecha);
+                return m.tipo === 'Gasto' && fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+            }).forEach(m => {
+                gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + m.monto;
+            });
+
+            contenedor.innerHTML = Object.entries(presupuestos).map(([categoria, limite]) => {
+                const gastado = gastosPorCategoria[categoria] || 0;
+                const porcentaje = Math.min((gastado / limite) * 100, 100);
+                const icono = obtenerIconoCategoria(categoria);
+                
+                let estado = 'normal';
+                let estadoTexto = `${formatearMoneda(limite - gastado)} disponible`;
+                
+                if (porcentaje >= 100) {
+                    estado = 'excedido';
+                    estadoTexto = `¡Excedido por ${formatearMoneda(gastado - limite)}!`;
+                } else if (porcentaje >= 80) {
+                    estado = 'advertencia';
+                    estadoTexto = '¡Cuidado! Cerca del límite';
+                }
+
+                return `
+                    <div class="presupuesto-item">
+                        <div class="presupuesto-header">
+                            <span class="presupuesto-categoria">${icono} ${categoria}</span>
+                            <button class="btn btn-eliminar" onclick="eliminarPresupuesto('${categoria}')">×</button>
+                        </div>
+                        <div class="presupuesto-valores">
+                            <span>Gastado: ${formatearMoneda(gastado)}</span>
+                            <span>Límite: ${formatearMoneda(limite)}</span>
+                        </div>
+                        <div class="presupuesto-barra">
+                            <div class="presupuesto-barra-relleno ${estado}" style="width: ${porcentaje}%"></div>
+                        </div>
+                        <div class="presupuesto-estado ${estado}">${estadoTexto}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== FUNCIONES DE MOVIMIENTOS RECURRENTES ====================
+
+        /**
+         * Actualiza el selector de categorías para movimientos recurrentes
+         */
+        function actualizarCategoriasRecurrente() {
+            const tipo = document.getElementById('recurrente-tipo').value;
+            const select = document.getElementById('recurrente-categoria');
+            select.innerHTML = '';
+            
+            const categorias = obtenerCategorias(tipo);
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nombre;
+                option.textContent = `${cat.icono} ${cat.nombre}`;
+                select.appendChild(option);
+            });
+        }
+
+        /**
+         * Agrega un nuevo movimiento recurrente
+         */
+        function agregarRecurrente() {
+            const tipo = document.getElementById('recurrente-tipo').value;
+            const categoria = document.getElementById('recurrente-categoria').value;
+            const descripcion = document.getElementById('recurrente-descripcion').value.trim();
+            const monto = parseFloat(document.getElementById('recurrente-monto').value);
+            const frecuencia = document.getElementById('recurrente-frecuencia').value;
+            const dia = parseInt(document.getElementById('recurrente-dia').value);
+
+            if (!descripcion || isNaN(monto) || monto <= 0) {
+                mostrarMensaje('Por favor, completa todos los campos correctamente.', 'error');
+                return;
+            }
+
+            const recurrente = {
+                id: Date.now(),
+                tipo,
+                categoria,
+                descripcion,
+                monto,
+                frecuencia,
+                dia,
+                ultimaEjecucion: null,
+                activo: true
+            };
+
+            movimientosRecurrentes.push(recurrente);
+            guardarDatosLocalStorage();
+            actualizarRecurrentes();
+            
+            // Limpiar formulario
+            document.getElementById('recurrente-descripcion').value = '';
+            document.getElementById('recurrente-monto').value = '';
+            mostrarMensaje('Movimiento recurrente agregado.', 'exito');
+        }
+
+        /**
+         * Elimina un movimiento recurrente
+         */
+        function eliminarRecurrente(id) {
+            if (confirm('¿Eliminar este movimiento recurrente?')) {
+                movimientosRecurrentes = movimientosRecurrentes.filter(r => r.id !== id);
+                guardarDatosLocalStorage();
+                actualizarRecurrentes();
+            }
+        }
+
+        /**
+         * Ejecuta manualmente un movimiento recurrente
+         */
+        function ejecutarRecurrente(id) {
+            const recurrente = movimientosRecurrentes.find(r => r.id === id);
+            if (!recurrente) return;
+
+            const nuevoMovimiento = {
+                id: Date.now(),
+                tipo: recurrente.tipo,
+                categoria: recurrente.categoria,
+                monto: recurrente.monto,
+                fecha: new Date().toISOString().split('T')[0],
+                descripcion: `${recurrente.descripcion} (Recurrente)`
+            };
+
+            movimientos.push(nuevoMovimiento);
+            recurrente.ultimaEjecucion = new Date().toISOString();
+            guardarDatosLocalStorage();
+            
+            actualizarResumen();
+            actualizarTabla();
+            actualizarRecurrentes();
+            actualizarGraficos();
+            actualizarPresupuestos();
+            mostrarMensaje('Movimiento recurrente ejecutado.', 'exito');
+        }
+
+        /**
+         * Actualiza la visualización de movimientos recurrentes
+         */
+        function actualizarRecurrentes() {
+            const contenedor = document.getElementById('recurrentes-lista');
+            const sinRecurrentes = document.getElementById('sin-recurrentes');
+
+            if (movimientosRecurrentes.length === 0) {
+                contenedor.innerHTML = '';
+                sinRecurrentes.style.display = 'block';
+                return;
+            }
+
+            sinRecurrentes.style.display = 'none';
+            const frecuenciasTexto = {
+                semanal: 'Semanal',
+                quincenal: 'Quincenal',
+                mensual: 'Mensual',
+                anual: 'Anual'
+            };
+
+            contenedor.innerHTML = movimientosRecurrentes.map(r => {
+                const icono = obtenerIconoCategoria(r.categoria);
+                return `
+                    <div class="recurrente-item">
+                        <div class="recurrente-info">
+                            <span class="recurrente-icono">${icono}</span>
+                            <div class="recurrente-detalles">
+                                <h4>${r.descripcion}</h4>
+                                <span>${r.categoria} • Día ${r.dia}</span>
+                            </div>
+                        </div>
+                        <span class="frecuencia-badge">${frecuenciasTexto[r.frecuencia]}</span>
+                        <span class="recurrente-monto ${r.tipo.toLowerCase()}">${r.tipo === 'Ingreso' ? '+' : '-'}${formatearMoneda(r.monto)}</span>
+                        <div class="acciones-celda">
+                            <button class="btn btn-editar" onclick="ejecutarRecurrente(${r.id})">▶ Ejecutar</button>
+                            <button class="btn btn-eliminar" onclick="eliminarRecurrente(${r.id})">×</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /**
+         * Verifica si hay movimientos recurrentes pendientes de ejecutar
+         */
+        function verificarRecurrentesPendientes() {
+            const hoy = new Date();
+            const diaHoy = hoy.getDate();
+            
+            movimientosRecurrentes.forEach(r => {
+                if (!r.activo) return;
+                
+                const debeEjecutar = r.dia === diaHoy;
+                const yaEjecutadoHoy = r.ultimaEjecucion && 
+                    new Date(r.ultimaEjecucion).toDateString() === hoy.toDateString();
+                
+                if (debeEjecutar && !yaEjecutadoHoy) {
+                    // Notificar al usuario que hay movimientos pendientes
+                    console.log(`Movimiento recurrente pendiente: ${r.descripcion}`);
+                }
+            });
+        }
+
+        // ==================== FUNCIONES DE IMPORTACIÓN ====================
+
+        /**
+         * Configura los eventos de arrastrar y soltar para importación
+         */
+        function configurarImportacion() {
+            const zona = document.getElementById('zona-importar');
+            
+            zona.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zona.classList.add('arrastrando');
+            });
+            
+            zona.addEventListener('dragleave', () => {
+                zona.classList.remove('arrastrando');
+            });
+            
+            zona.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zona.classList.remove('arrastrando');
+                
+                const archivo = e.dataTransfer.files[0];
+                if (archivo) {
+                    procesarArchivoImportado(archivo);
+                }
+            });
+        }
+
+        /**
+         * Maneja el evento de selección de archivo
+         */
+        function importarArchivo(event) {
+            const archivo = event.target.files[0];
+            if (archivo) {
+                procesarArchivoImportado(archivo);
+            }
+        }
+
+        /**
+         * Procesa el archivo importado (JSON o CSV)
+         */
+        function procesarArchivoImportado(archivo) {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const contenido = e.target.result;
+                const extension = archivo.name.split('.').pop().toLowerCase();
+                
+                try {
+                    if (extension === 'json') {
+                        importarJSON(contenido);
+                    } else if (extension === 'csv') {
+                        importarCSV(contenido);
+                    } else {
+                        mostrarMensaje('Formato de archivo no soportado.', 'error');
+                    }
+                } catch (error) {
+                    mostrarMensaje('Error al procesar el archivo: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsText(archivo);
+        }
+
+        /**
+         * Importa datos desde un archivo JSON
+         */
+        function importarJSON(contenido) {
+            const datos = JSON.parse(contenido);
+            
+            if (datos.movimientos) {
+                const confirmar = confirm(`Se importarán ${datos.movimientos.length} movimientos. ¿Deseas reemplazar los datos actuales o agregar a los existentes?\n\nAceptar = Reemplazar\nCancelar = Agregar`);
+                
+                if (confirmar) {
+                    movimientos = datos.movimientos;
+                } else {
+                    // Agregar evitando duplicados por ID
+                    const idsExistentes = new Set(movimientos.map(m => m.id));
+                    datos.movimientos.forEach(m => {
+                        if (!idsExistentes.has(m.id)) {
+                            movimientos.push(m);
+                        }
+                    });
+                }
+            }
+            
+            if (datos.objetivoAhorro !== undefined) {
+                objetivoAhorro = datos.objetivoAhorro;
+                document.getElementById('objetivo-monto').value = objetivoAhorro;
+            }
+            
+            if (datos.categoriasPersonalizadas) {
+                categoriasPersonalizadas = datos.categoriasPersonalizadas;
+            }
+
+            if (datos.presupuestos) {
+                presupuestos = datos.presupuestos;
+            }
+
+            if (datos.movimientosRecurrentes) {
+                movimientosRecurrentes = datos.movimientosRecurrentes;
+            }
+            
+            guardarDatosLocalStorage();
+            actualizarTodo();
+            mostrarMensaje('Datos importados correctamente.', 'exito');
+        }
+
+        /**
+         * Importa movimientos desde un archivo CSV
+         */
+        function importarCSV(contenido) {
+            const lineas = contenido.split('\n').filter(l => l.trim());
+            const cabecera = lineas[0].toLowerCase();
+            
+            // Detectar si tiene cabecera
+            const tieneCabecera = cabecera.includes('fecha') || cabecera.includes('tipo');
+            const inicio = tieneCabecera ? 1 : 0;
+            
+            const nuevosMovimientos = [];
+            
+            for (let i = inicio; i < lineas.length; i++) {
+                const valores = lineas[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                
+                if (valores.length >= 5) {
+                    nuevosMovimientos.push({
+                        id: Date.now() + i,
+                        fecha: valores[0],
+                        tipo: valores[1],
+                        categoria: valores[2],
+                        descripcion: valores[3] || '-',
+                        monto: parseFloat(valores[4]) || 0
+                    });
+                }
+            }
+            
+            if (nuevosMovimientos.length === 0) {
+                mostrarMensaje('No se encontraron movimientos válidos en el CSV.', 'error');
+                return;
+            }
+            
+            const confirmar = confirm(`Se importarán ${nuevosMovimientos.length} movimientos. ¿Agregar a los existentes?`);
+            if (confirmar) {
+                movimientos = [...movimientos, ...nuevosMovimientos];
+                guardarDatosLocalStorage();
+                actualizarTodo();
+                mostrarMensaje(`${nuevosMovimientos.length} movimientos importados.`, 'exito');
+            }
+        }
+
+        /**
+         * Actualiza todas las secciones de la interfaz
+         */
+        function actualizarTodo() {
+            actualizarResumen();
+            actualizarTabla();
+            actualizarObjetivoAhorro();
+            actualizarFiltroCategorias();
+            actualizarResumenCategorias();
+            actualizarCategoriasFormulario();
+            renderizarCategoriasPersonalizadas();
+            actualizarGraficos();
+            actualizarPresupuestos();
+            actualizarRecurrentes();
+            cargarCategoriasPresupuesto();
+        }
+
+        /**
+         * Exporta todos los datos a JSON (versión completa)
+         */
+        function exportarJSON() {
+            const datos = {
+                movimientos,
+                objetivoAhorro,
+                categoriasPersonalizadas,
+                presupuestos,
+                movimientosRecurrentes,
+                fechaExportacion: new Date().toISOString(),
+                version: '2.0'
+            };
+
+            const json = JSON.stringify(datos, null, 2);
+            descargarArchivo(json, 'finanzas_backup_completo.json', 'application/json');
+            mostrarMensaje('Backup completo exportado.', 'exito');
+        }
+        
+        // ==================== PWA - SERVICE WORKER ====================
+
+        /**
+         * Registra el Service Worker para funcionalidad offline
+         */
+        function registrarServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then((registration) => {
+                            console.log('Service Worker registrado:', registration.scope);
+                            
+                            // Verificar actualizaciones
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // Hay una nueva versión disponible
+                                        if (confirm('Hay una nueva versión disponible. ¿Deseas actualizar?')) {
+                                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                            window.location.reload();
+                                        }
+                                    }
+                                });
+                            });
+                        })
+                        .catch((error) => {
+                            console.log('Error al registrar Service Worker:', error);
+                        });
+                });
+            }
+        }
+
+        /**
+         * Solicita permiso para notificaciones (opcional)
+         */
+        function solicitarPermisoNotificaciones() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // ==================== INICIAR APLICACIÓN ====================
+        
+        // Ejecutar inicialización cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializar();
+            registrarServiceWorker();
+        });
+    </script>
+
+</body>
+</html>
