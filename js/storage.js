@@ -466,6 +466,282 @@ function exportarJSON() {
 }
 
 /**
+ * Exporta todos los datos a Excel (.xlsx) con múltiples hojas y formato
+ */
+function exportarExcel() {
+    if (!window.XLSX) {
+        mostrarToast('Error', 'La librería de Excel aún no se ha cargado. Intenta de nuevo.', 'error');
+        return;
+    }
+
+    const mesActual = new Date().getMonth();
+    const anioActual = new Date().getFullYear();
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    // Crear un nuevo libro de Excel
+    const wb = XLSX.utils.book_new();
+
+    // ========== HOJA 1: MOVIMIENTOS ==========
+    const movimientosData = [
+        ['ID', 'Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto', 'Etiquetas'],
+        ...movimientos.map(m => [
+            m.id,
+            formatearFecha(m.fecha),
+            m.tipo,
+            m.categoria,
+            m.descripcion,
+            m.monto,
+            m.etiquetas ? m.etiquetas.join(', ') : ''
+        ])
+    ];
+    const wsMovimientos = XLSX.utils.aoa_to_sheet(movimientosData);
+    
+    // Aplicar formato a headers
+    wsMovimientos['!cols'] = [
+        { wch: 12 }, // ID
+        { wch: 12 }, // Fecha
+        { wch: 10 }, // Tipo
+        { wch: 20 }, // Categoría
+        { wch: 40 }, // Descripción
+        { wch: 15 }, // Monto
+        { wch: 25 }  // Etiquetas
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, wsMovimientos, 'Movimientos');
+
+    // ========== HOJA 2: RESUMEN MENSUAL ==========
+    const movimientosMes = movimientos.filter(m => {
+        const fecha = new Date(m.fecha);
+        return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+    });
+
+    const ingresosMes = movimientosMes.filter(m => m.tipo === 'Ingreso').reduce((sum, m) => sum + m.monto, 0);
+    const gastosMes = movimientosMes.filter(m => m.tipo === 'Gasto').reduce((sum, m) => sum + m.monto, 0);
+    const ahorrosMes = movimientosMes.filter(m => m.tipo === 'Ahorro').reduce((sum, m) => sum + m.monto, 0);
+    const balanceMes = ingresosMes - gastosMes - ahorrosMes;
+
+    // Gastos por categoría
+    const gastosPorCategoria = {};
+    movimientosMes.filter(m => m.tipo === 'Gasto').forEach(m => {
+        gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + m.monto;
+    });
+
+    const resumenData = [
+        [`RESUMEN - ${meses[mesActual]} ${anioActual}`, ''],
+        ['', ''],
+        ['Concepto', 'Monto'],
+        ['Total Ingresos', ingresosMes],
+        ['Total Gastos', gastosMes],
+        ['Total Ahorros', ahorrosMes],
+        ['Balance Final', balanceMes],
+        ['', ''],
+        ['GASTOS POR CATEGORÍA', ''],
+        ['Categoría', 'Total'],
+        ...Object.entries(gastosPorCategoria)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cat, monto]) => [cat, monto])
+    ];
+
+    const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+    wsResumen['!cols'] = [{ wch: 25 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen Mensual');
+
+    // ========== HOJA 3: CATEGORÍAS PERSONALIZADAS ==========
+    const categoriasData = [
+        ['Tipo', 'Nombre', 'Icono'],
+        ...Object.entries(categoriasPersonalizadas).flatMap(([tipo, cats]) =>
+            cats.map(c => [tipo, c.nombre, c.icono])
+        )
+    ];
+    const wsCategorias = XLSX.utils.aoa_to_sheet(categoriasData);
+    wsCategorias['!cols'] = [{ wch: 10 }, { wch: 25 }, { wch: 8 }];
+    XLSX.utils.book_append_sheet(wb, wsCategorias, 'Categorías');
+
+    // ========== HOJA 4: MOVIMIENTOS RECURRENTES ==========
+    const recurrentesData = [
+        ['Tipo', 'Categoría', 'Descripción', 'Monto', 'Frecuencia', 'Día del Mes'],
+        ...movimientosRecurrentes.map(r => [
+            r.tipo,
+            r.categoria,
+            r.descripcion,
+            r.monto,
+            r.frecuencia,
+            r.diaMes
+        ])
+    ];
+    const wsRecurrentes = XLSX.utils.aoa_to_sheet(recurrentesData);
+    wsRecurrentes['!cols'] = [
+        { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 12 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsRecurrentes, 'Recurrentes');
+
+    // ========== HOJA 5: CONFIGURACIÓN ==========
+    const configData = [
+        ['CONFIGURACIÓN DE LA APLICACIÓN', ''],
+        ['', ''],
+        ['Parámetro', 'Valor'],
+        ['Objetivo de Ahorro Mensual', objetivoAhorro],
+        ['Total de Movimientos', movimientos.length],
+        ['Fecha de Exportación', new Date().toLocaleString('es-CO')],
+        ['Versión', '2.0']
+    ];
+    const wsConfig = XLSX.utils.aoa_to_sheet(configData);
+    wsConfig['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsConfig, 'Configuración');
+
+    // Generar archivo y descargar
+    const nombreArchivo = `finanzas_${meses[mesActual].toLowerCase()}_${anioActual}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+    
+    mostrarMensaje('Archivo Excel exportado correctamente con múltiples hojas.', 'exito');
+}
+
+/**
+ * Importa datos desde un archivo Excel (.xlsx)
+ */
+function importarExcel(archivo) {
+    if (!window.XLSX) {
+        mostrarToast('Error', 'La librería de Excel aún no se ha cargado. Intenta de nuevo.', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            // Leer hoja de Movimientos
+            if (workbook.SheetNames.includes('Movimientos')) {
+                const wsMovimientos = workbook.Sheets['Movimientos'];
+                const datosMovimientos = XLSX.utils.sheet_to_json(wsMovimientos);
+                
+                const nuevosMovimientos = datosMovimientos.map(row => ({
+                    id: row.ID || Date.now() + Math.random(),
+                    fecha: parsearFechaExcel(row.Fecha),
+                    tipo: row.Tipo,
+                    categoria: row['Categoría'] || row.Categoria,
+                    descripcion: row['Descripción'] || row.Descripcion || '-',
+                    monto: parseFloat(row.Monto) || 0,
+                    etiquetas: row.Etiquetas ? row.Etiquetas.split(',').map(t => t.trim()) : []
+                }));
+
+                const confirmar = confirm(`Se encontraron ${nuevosMovimientos.length} movimientos. ¿Deseas:\n\nOK = Agregar a los existentes\nCancelar = Reemplazar todos`);
+                
+                if (confirmar) {
+                    movimientos = [...movimientos, ...nuevosMovimientos];
+                } else {
+                    movimientos = nuevosMovimientos;
+                }
+            }
+
+            // Leer hoja de Categorías Personalizadas
+            if (workbook.SheetNames.includes('Categorías')) {
+                const wsCategorias = workbook.Sheets['Categorías'];
+                const datosCategorias = XLSX.utils.sheet_to_json(wsCategorias);
+                
+                const nuevasCategorias = { Ingreso: [], Gasto: [], Ahorro: [] };
+                datosCategorias.forEach(row => {
+                    const tipo = row.Tipo;
+                    if (tipo && nuevasCategorias[tipo]) {
+                        nuevasCategorias[tipo].push({
+                            nombre: row.Nombre,
+                            icono: row.Icono || '📌'
+                        });
+                    }
+                });
+
+                if (confirm('¿Reemplazar categorías personalizadas con las del archivo?')) {
+                    categoriasPersonalizadas = nuevasCategorias;
+                }
+            }
+
+            // Leer hoja de Recurrentes
+            if (workbook.SheetNames.includes('Recurrentes')) {
+                const wsRecurrentes = workbook.Sheets['Recurrentes'];
+                const datosRecurrentes = XLSX.utils.sheet_to_json(wsRecurrentes);
+                
+                const nuevosRecurrentes = datosRecurrentes.map(row => ({
+                    id: Date.now() + Math.random(),
+                    tipo: row.Tipo,
+                    categoria: row['Categoría'] || row.Categoria,
+                    descripcion: row['Descripción'] || row.Descripcion,
+                    monto: parseFloat(row.Monto) || 0,
+                    frecuencia: row.Frecuencia,
+                    diaMes: parseInt(row['Día del Mes'] || row['Dia del Mes']) || 1,
+                    ultimaEjecucion: null
+                }));
+
+                if (confirm(`¿Reemplazar movimientos recurrentes (${nuevosRecurrentes.length} encontrados)?`)) {
+                    movimientosRecurrentes = nuevosRecurrentes;
+                }
+            }
+
+            // Leer configuración
+            if (workbook.SheetNames.includes('Configuración')) {
+                const wsConfig = workbook.Sheets['Configuración'];
+                const datosConfig = XLSX.utils.sheet_to_json(wsConfig);
+                
+                datosConfig.forEach(row => {
+                    if (row['Parámetro'] === 'Objetivo de Ahorro Mensual' || row.Parametro === 'Objetivo de Ahorro Mensual') {
+                        const nuevoObjetivo = parseFloat(row.Valor) || 0;
+                        if (nuevoObjetivo > 0 && confirm(`¿Establecer objetivo de ahorro en ${formatearMoneda(nuevoObjetivo)}?`)) {
+                            objetivoAhorro = nuevoObjetivo;
+                        }
+                    }
+                });
+            }
+
+            // Guardar y actualizar
+            guardarDatosLocalStorage();
+            actualizarTodo();
+            mostrarToast('¡Importación exitosa!', 'Datos importados desde Excel correctamente', 'exito');
+
+        } catch (error) {
+            console.error('Error importando Excel:', error);
+            mostrarToast('Error', 'No se pudo importar el archivo Excel: ' + error.message, 'error');
+        }
+    };
+
+    reader.readAsArrayBuffer(archivo);
+}
+
+/**
+ * Parsea una fecha de Excel a formato ISO
+ */
+function parsearFechaExcel(fechaExcel) {
+    // Si ya está en formato ISO (YYYY-MM-DD)
+    if (typeof fechaExcel === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaExcel)) {
+        return fechaExcel;
+    }
+    
+    // Si está en formato DD/MM/YYYY
+    if (typeof fechaExcel === 'string' && fechaExcel.includes('/')) {
+        const partes = fechaExcel.split('/');
+        if (partes.length === 3) {
+            const dia = partes[0].padStart(2, '0');
+            const mes = partes[1].padStart(2, '0');
+            const anio = partes[2];
+            return `${anio}-${mes}-${dia}`;
+        }
+    }
+    
+    // Si es un número de serie de Excel
+    if (typeof fechaExcel === 'number') {
+        const fecha = XLSX.SSF.parse_date_code(fechaExcel);
+        const anio = fecha.y;
+        const mes = String(fecha.m).padStart(2, '0');
+        const dia = String(fecha.d).padStart(2, '0');
+        return `${anio}-${mes}-${dia}`;
+    }
+    
+    // Fallback: fecha actual
+    return new Date().toISOString().split('T')[0];
+}
+
+/**
  * Descarga un archivo con el contenido especificado.
  * @param {string} contenido - Contenido del archivo
  * @param {string} nombreArchivo - Nombre del archivo
@@ -521,14 +797,22 @@ function importarArchivo(event) {
 }
 
 /**
- * Procesa el archivo importado (JSON o CSV)
+ * Procesa el archivo importado (JSON, CSV o Excel)
  */
 function procesarArchivoImportado(archivo) {
+    const extension = archivo.name.split('.').pop().toLowerCase();
+    
+    // Si es Excel, usar función especializada
+    if (extension === 'xlsx' || extension === 'xls') {
+        importarExcel(archivo);
+        return;
+    }
+    
+    // Para JSON y CSV, usar FileReader
     const reader = new FileReader();
     
     reader.onload = (e) => {
         const contenido = e.target.result;
-        const extension = archivo.name.split('.').pop().toLowerCase();
         
         try {
             if (extension === 'json') {
@@ -536,7 +820,7 @@ function procesarArchivoImportado(archivo) {
             } else if (extension === 'csv') {
                 importarCSVContenido(contenido);
             } else {
-                mostrarMensaje('Formato de archivo no soportado.', 'error');
+                mostrarMensaje('Formato de archivo no soportado. Use .json, .csv o .xlsx', 'error');
             }
         } catch (error) {
             mostrarMensaje('Error al procesar el archivo: ' + error.message, 'error');

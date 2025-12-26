@@ -29,6 +29,9 @@
     <!-- jsPDF para generación de reportes PDF - Carga diferida -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
+    
+    <!-- SheetJS para exportar/importar Excel - Carga diferida -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 </head>
 <body>
 
@@ -499,19 +502,23 @@
                 <div style="margin-bottom: 20px;">
                     <h4 style="margin-bottom: 10px;">📤 Exportar Datos</h4>
                     <div class="herramientas">
-                        <button class="btn btn-secundario" onclick="exportarCSV()">📥 Exportar CSV</button>
+                        <button class="btn btn-exito" onclick="exportarExcel()">📊 Exportar Excel (.xlsx)</button>
+                        <button class="btn btn-secundario" onclick="exportarCSV()">📅 Exportar CSV</button>
                         <button class="btn btn-secundario" onclick="exportarJSON()">📦 Exportar JSON</button>
                         <button class="btn btn-secundario" onclick="generarReportePDF()">📋 Reporte PDF</button>
                     </div>
+                    <p style="color: var(--color-texto-terciario); font-size: 0.85rem; margin-top: 8px;">
+                        ✨ <strong>Excel (.xlsx)</strong>: Múltiples hojas con formato, ideal para análisis avanzado
+                    </p>
                 </div>
                 
                 <!-- Importar archivo -->
                 <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-borde);">
-                    <h4 style="margin-bottom: 10px;">📥 Importar Datos</h4>
+                    <h4 style="margin-bottom: 10px;">📂 Importar Datos</h4>
                     <div class="importar-zona" id="zona-importar" onclick="document.getElementById('archivo-importar').click()">
                         <p>📂 Arrastra un archivo aquí o haz clic para importar</p>
-                        <p style="font-size: 0.85rem;">Soporta archivos .json (backup completo) o .csv (movimientos)</p>
-                        <input type="file" id="archivo-importar" class="importar-input" accept=".json,.csv" onchange="importarArchivo(event)">
+                        <p style="font-size: 0.85rem;">Soporta: <strong>.xlsx</strong> (Excel), .json (backup completo), .csv (movimientos)</p>
+                        <input type="file" id="archivo-importar" class="importar-input" accept=".json,.csv,.xlsx,.xls" onchange="importarArchivo(event)">
                     </div>
                 </div>
 
