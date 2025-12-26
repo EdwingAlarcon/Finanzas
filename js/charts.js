@@ -396,7 +396,15 @@ function verificarPresupuestosExcedidos() {
  */
 function generarReportePDF() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    
+    // Crear documento con configuración UTF-8
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        putOnlyUsedFonts: true,
+        compress: true
+    });
     
     const mesActual = new Date().getMonth();
     const anioActual = new Date().getFullYear();

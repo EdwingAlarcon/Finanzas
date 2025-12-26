@@ -439,8 +439,10 @@ function exportarCSV() {
         m.monto
     ]);
 
-    const csv = [headers.join(','), ...filas.map(f => f.join(','))].join('\n');
-    descargarArchivo(csv, 'finanzas_movimientos.csv', 'text/csv');
+    // Agregar BOM UTF-8 para que Excel reconozca correctamente las tildes
+    const BOM = '\uFEFF';
+    const csv = BOM + [headers.join(','), ...filas.map(f => f.join(','))].join('\n');
+    descargarArchivo(csv, 'finanzas_movimientos.csv', 'text/csv;charset=utf-8');
     mostrarMensaje('Archivo CSV exportado correctamente.', 'exito');
 }
 
@@ -459,7 +461,7 @@ function exportarJSON() {
     };
 
     const json = JSON.stringify(datos, null, 2);
-    descargarArchivo(json, 'finanzas_backup_completo.json', 'application/json');
+    descargarArchivo(json, 'finanzas_backup_completo.json', 'application/json;charset=utf-8');
     mostrarMensaje('Backup completo exportado.', 'exito');
 }
 
@@ -470,7 +472,8 @@ function exportarJSON() {
  * @param {string} tipo - Tipo MIME del archivo
  */
 function descargarArchivo(contenido, nombreArchivo, tipo) {
-    const blob = new Blob([contenido], { type: tipo });
+    // Asegurar UTF-8 en el blob
+    const blob = new Blob([contenido], { type: `${tipo};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -540,7 +543,8 @@ function procesarArchivoImportado(archivo) {
         }
     };
     
-    reader.readAsText(archivo);
+    // Leer explícitamente con codificación UTF-8
+    reader.readAsText(archivo, 'UTF-8');
 }
 
 /**
@@ -591,6 +595,11 @@ function importarJSONContenido(contenido) {
  * Importa movimientos desde un archivo CSV
  */
 function importarCSVContenido(contenido) {
+    // Eliminar BOM UTF-8 si existe
+    if (contenido.charCodeAt(0) === 0xFEFF) {
+        contenido = contenido.slice(1);
+    }
+    
     const lineas = contenido.split('\n').filter(l => l.trim());
     const cabecera = lineas[0].toLowerCase();
     
