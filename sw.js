@@ -3,11 +3,26 @@
  * Permite funcionalidad offline y mejora el rendimiento con caché
  */
 
-const CACHE_NAME = 'finanzas-v1';
+const CACHE_NAME = 'finanzas-v2';
 const CACHE_ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
+    // CSS Modules
+    '/css/main.css',
+    '/css/variables.css',
+    '/css/base.css',
+    '/css/components.css',
+    '/css/responsive.css',
+    // JS Modules
+    '/js/config.js',
+    '/js/storage.js',
+    '/js/categories.js',
+    '/js/movements.js',
+    '/js/charts.js',
+    '/js/ui.js',
+    '/js/app.js',
+    // External CDN
     'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 

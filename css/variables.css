@@ -1,0 +1,79 @@
+/**
+ * Variables CSS - Temas y configuración global
+ * Panel de Finanzas Personales
+ */
+
+/* === Variables de tema (CSS Custom Properties) === */
+:root {
+    /* Colores del tema claro (por defecto) */
+    --color-fondo: #e8eaef;
+    --color-fondo-tarjeta: #ffffff;
+    --color-fondo-secundario: #f5f6f8;
+    --color-texto: #333333;
+    --color-texto-secundario: #666666;
+    --color-texto-terciario: #999999;
+    --color-borde: #d0d0d0;
+    --color-borde-claro: #e5e5e5;
+    --color-primario: #667eea;
+    --color-primario-fin: #764ba2;
+    --color-exito: #27ae60;
+    --color-peligro: #e74c3c;
+    --color-info: #3498db;
+    --color-advertencia: #f39c12;
+    --color-ahorro: #9b59b6;
+    --sombra-tarjeta: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+    --sombra-tarjeta-hover: 0 4px 8px rgba(0, 0, 0, 0.15), 0 12px 24px rgba(0, 0, 0, 0.15);
+    --borde-tarjeta: 1px solid rgba(0, 0, 0, 0.08);
+    --gradiente-primario: linear-gradient(135deg, var(--color-primario) 0%, var(--color-primario-fin) 100%);
+}
+
+/* Tema Oscuro */
+[data-tema="oscuro"] {
+    --color-fondo: #1a1a2e;
+    --color-fondo-tarjeta: #16213e;
+    --color-fondo-secundario: #1f2940;
+    --color-texto: #e8e8e8;
+    --color-texto-secundario: #b0b0b0;
+    --color-texto-terciario: #808080;
+    --color-borde: #2d3a4f;
+    --color-borde-claro: #253040;
+    --color-primario: #7c8ce8;
+    --color-primario-fin: #9b6dcc;
+    --sombra-tarjeta: 0 2px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+    --sombra-tarjeta-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --borde-tarjeta: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Tema Verde Naturaleza */
+[data-tema="naturaleza"] {
+    --color-fondo: #d5e5db;
+    --color-fondo-tarjeta: #ffffff;
+    --color-fondo-secundario: #e8f5e9;
+    --color-texto: #1a3528;
+    --color-texto-secundario: #3d5a4a;
+    --color-texto-terciario: #5a7d68;
+    --color-borde: #a5d6a7;
+    --color-borde-claro: #c8e6c9;
+    --color-primario: #2e7d32;
+    --color-primario-fin: #1b5e20;
+    --sombra-tarjeta: 0 2px 4px rgba(30, 80, 40, 0.15), 0 8px 16px rgba(30, 80, 40, 0.12);
+    --sombra-tarjeta-hover: 0 4px 8px rgba(30, 80, 40, 0.2), 0 12px 24px rgba(30, 80, 40, 0.18);
+    --borde-tarjeta: 1px solid rgba(46, 125, 50, 0.15);
+}
+
+/* Tema Océano */
+[data-tema="oceano"] {
+    --color-fondo: #d4e8f7;
+    --color-fondo-tarjeta: #ffffff;
+    --color-fondo-secundario: #e1f5fe;
+    --color-texto: #1a365d;
+    --color-texto-secundario: #2c5282;
+    --color-texto-terciario: #4a7ab0;
+    --color-borde: #90caf9;
+    --color-borde-claro: #bbdefb;
+    --color-primario: #1565c0;
+    --color-primario-fin: #0d47a1;
+    --sombra-tarjeta: 0 2px 8px rgba(21, 101, 192, 0.1), 0 4px 16px rgba(21, 101, 192, 0.08);
+    --sombra-tarjeta-hover: 0 4px 12px rgba(21, 101, 192, 0.15), 0 8px 24px rgba(21, 101, 192, 0.12);
+    --borde-tarjeta: 1px solid rgba(21, 101, 192, 0.1);
+}

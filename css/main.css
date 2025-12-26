@@ -1,0 +1,15 @@
+/**
+ * ==================== ESTILOS PRINCIPALES ====================
+ * Importa todos los módulos CSS en el orden correcto
+ * 
+ * Orden de importación:
+ * 1. variables.css - Variables CSS (temas, colores)
+ * 2. base.css - Estilos base, reset, animaciones
+ * 3. components.css - Componentes UI
+ * 4. responsive.css - Media queries
+ */
+
+@import url('variables.css');
+@import url('base.css');
+@import url('components.css');
+@import url('responsive.css');

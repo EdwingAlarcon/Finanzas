@@ -1,0 +1,177 @@
+/**
+ * Estilos Responsive - Media queries
+ * Panel de Finanzas Personales
+ */
+
+/* ==================== TABLET Y MÓVIL (768px) ==================== */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.6rem;
+    }
+
+    header p {
+        font-size: 0.95rem;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    section {
+        padding: 15px;
+    }
+
+    .tarjeta {
+        padding: 20px;
+    }
+
+    .tarjeta .monto {
+        font-size: 1.5rem;
+    }
+
+    .objetivo-container {
+        grid-template-columns: 1fr;
+    }
+
+    th, td {
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+
+    .filtros {
+        flex-direction: column;
+    }
+
+    .filtros .campo {
+        width: 100%;
+    }
+
+    .agregar-categoria-form {
+        flex-direction: column;
+    }
+
+    .agregar-categoria-form .campo {
+        width: 100%;
+    }
+
+    .categoria-item {
+        flex-wrap: wrap;
+    }
+
+    .categoria-monto {
+        width: 100%;
+        text-align: left;
+        margin-top: 10px;
+    }
+
+    .acciones-celda {
+        flex-direction: column;
+    }
+
+    /* Ocultar elementos no esenciales en móvil */
+    .shortcuts-help,
+    .btn-ayuda-flotante,
+    .shortcut-badge {
+        display: none !important;
+    }
+
+    .paginacion {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .resumen {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tarjeta .monto {
+        font-size: 1.3rem;
+    }
+
+    /* Tabs responsive */
+    .tabs-navegacion {
+        padding: 8px;
+        gap: 3px;
+        border-radius: 12px;
+    }
+
+    .tab-btn {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        min-width: auto;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .tab-btn .tab-texto {
+        display: none;
+    }
+
+    .tab-btn .tab-icono {
+        font-size: 1.3rem;
+    }
+
+    .btn-accion-flotante {
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+    }
+
+    .modal-accion-rapida {
+        right: 10px;
+        left: 10px;
+        width: auto;
+        bottom: 90px;
+    }
+
+    .dashboard-compacto .resumen {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .dashboard-compacto .tarjeta {
+        padding: 10px;
+    }
+
+    .dashboard-compacto .tarjeta .icono {
+        font-size: 1.2rem;
+    }
+
+    .dashboard-compacto .tarjeta h3 {
+        font-size: 0.65rem;
+    }
+
+    .dashboard-compacto .tarjeta .monto {
+        font-size: 1rem;
+    }
+
+    .dashboard-compacto .tarjeta .subtexto {
+        display: none;
+    }
+
+    .tab-seccion {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .tab-seccion h2 {
+        font-size: 1rem;
+    }
+}
+
+/* ==================== MÓVIL PEQUEÑO (480px) ==================== */
+@media (max-width: 480px) {
+    .resumen {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-compacto .resumen {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-compacto .tarjeta:last-child {
+        grid-column: span 2;
+    }
+}
