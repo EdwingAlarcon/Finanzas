@@ -5,13 +5,17 @@
 
 /**
  * Obtiene todas las categorías (predefinidas + personalizadas) de un tipo.
+ * Las devuelve ordenadas alfabéticamente.
  * @param {string} tipo - 'Ingreso', 'Gasto' o 'Ahorro'
- * @returns {Array} - Array de categorías con nombre e icono
+ * @returns {Array} - Array de categorías ordenadas alfabéticamente
  */
 function obtenerCategorias(tipo) {
     const predefinidas = categoriasPredefinidas[tipo] || [];
     const personalizadas = categoriasPersonalizadas[tipo] || [];
-    return [...predefinidas, ...personalizadas];
+    const todas = [...predefinidas, ...personalizadas];
+    
+    // Ordenar alfabéticamente por nombre
+    return todas.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
 }
 
 /**
