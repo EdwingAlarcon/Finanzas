@@ -20,8 +20,12 @@
     <meta name="msapplication-TileColor" content="#667eea">
     <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
     
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js CDN - Carga diferida para mejor rendimiento -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    
+    <!-- jsPDF para generación de reportes PDF - Carga diferida -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
     
     <!-- ==================== ESTILOS CSS ==================== -->
     <style>
@@ -105,6 +109,19 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        /* === Screen Reader Only (Accesibilidad) === */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
         body {
@@ -487,6 +504,11 @@
             font-weight: 600;
         }
 
+        .tipo-ahorro {
+            color: var(--color-ahorro);
+            font-weight: 600;
+        }
+
         .monto-positivo {
             color: var(--color-exito);
             font-weight: 600;
@@ -494,6 +516,11 @@
 
         .monto-negativo {
             color: var(--color-peligro);
+            font-weight: 600;
+        }
+
+        .monto-ahorro {
+            color: var(--color-ahorro);
             font-weight: 600;
         }
 
@@ -998,6 +1025,328 @@
             display: none;
         }
 
+        /* === PIN de Seguridad === */
+        .pin-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradiente-primario);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .pin-overlay.oculto {
+            display: none;
+        }
+
+        .pin-container {
+            background: var(--color-fondo-tarjeta);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 350px;
+            width: 90%;
+        }
+
+        .pin-container h2 {
+            margin-bottom: 10px;
+            color: var(--color-texto);
+        }
+
+        .pin-container p {
+            color: var(--color-texto-secundario);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .pin-input-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .pin-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 2px solid var(--color-borde);
+            border-radius: 10px;
+            background: var(--color-fondo-secundario);
+            color: var(--color-texto);
+        }
+
+        .pin-input:focus {
+            border-color: var(--color-primario);
+            outline: none;
+        }
+
+        .pin-error {
+            color: var(--color-peligro);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .pin-error.visible {
+            display: block;
+        }
+
+        /* === Calendario === */
+        .calendario-container {
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .calendario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendario-header h3 {
+            color: var(--color-texto);
+            font-size: 1.1rem;
+        }
+
+        .calendario-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendario-nav button {
+            padding: 8px 15px;
+            border: none;
+            background: var(--color-primario);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendario-dia-header {
+            text-align: center;
+            font-weight: 600;
+            color: var(--color-texto-secundario);
+            padding: 10px 5px;
+            font-size: 0.8rem;
+        }
+
+        .calendario-dia {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 5px;
+            border-radius: 8px;
+            background: var(--color-fondo-tarjeta);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 60px;
+            position: relative;
+        }
+
+        .calendario-dia:hover {
+            background: var(--color-borde-claro);
+        }
+
+        .calendario-dia.otro-mes {
+            opacity: 0.3;
+        }
+
+        .calendario-dia.hoy {
+            border: 2px solid var(--color-primario);
+        }
+
+        .calendario-dia.seleccionado {
+            background: var(--color-primario);
+            color: white;
+        }
+
+        .calendario-dia .numero {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .calendario-dia .indicadores {
+            display: flex;
+            gap: 3px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .calendario-dia .indicador {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .calendario-dia .indicador.ingreso {
+            background: var(--color-exito);
+        }
+
+        .calendario-dia .indicador.gasto {
+            background: var(--color-peligro);
+        }
+
+        .calendario-detalle {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--color-fondo-tarjeta);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .calendario-detalle.visible {
+            display: block;
+        }
+
+        .calendario-detalle h4 {
+            margin-bottom: 10px;
+            color: var(--color-texto);
+        }
+
+        .calendario-detalle-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--color-borde-claro);
+        }
+
+        /* === Etiquetas/Tags === */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            background: var(--color-primario);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.75rem;
+        }
+
+        .tag .eliminar-tag-mov {
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .agregar-tag-input {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .agregar-tag-input input {
+            flex: 1;
+            padding: 5px 10px;
+            border: 1px solid var(--color-borde);
+            border-radius: 15px;
+            font-size: 0.85rem;
+            background: var(--color-fondo-tarjeta);
+            color: var(--color-texto);
+        }
+
+        /* === Notificaciones === */
+        .notificacion-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--color-fondo-tarjeta);
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 9000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            max-width: 350px;
+        }
+
+        .notificacion-toast.visible {
+            transform: translateX(0);
+        }
+
+        .notificacion-toast.advertencia {
+            border-left: 4px solid var(--color-advertencia);
+        }
+
+        .notificacion-toast.exito {
+            border-left: 4px solid var(--color-exito);
+        }
+
+        .notificacion-toast.error {
+            border-left: 4px solid var(--color-peligro);
+        }
+
+        .notificacion-toast .cerrar-toast {
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--color-texto-terciario);
+        }
+
+        /* === Sincronización en la nube === */
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: var(--color-fondo-secundario);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .sync-status .sync-icon {
+            font-size: 1.2rem;
+        }
+
+        .sync-status.sincronizado {
+            color: var(--color-exito);
+        }
+
+        .sync-status.pendiente {
+            color: var(--color-advertencia);
+        }
+
+        .sync-status.error {
+            color: var(--color-peligro);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .sync-status.sincronizando .sync-icon {
+            animation: spin 1s linear infinite;
+        }
+
         /* === Responsive === */
         @media (max-width: 768px) {
             header h1 {
@@ -1073,9 +1422,642 @@
         .fade-in {
             animation: fadeIn 0.3s ease;
         }
+
+        /* === Paginación === */
+        .paginacion {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--color-fondo-secundario);
+            border-radius: 10px;
+        }
+
+        .paginacion-info {
+            color: var(--color-texto-secundario);
+            font-size: 0.9rem;
+        }
+
+        .paginacion-botones {
+            display: flex;
+            gap: 5px;
+        }
+
+        .paginacion-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--color-borde);
+            background: var(--color-fondo-tarjeta);
+            color: var(--color-texto);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .paginacion-btn:hover:not(:disabled) {
+            background: var(--color-primario);
+            color: white;
+            border-color: var(--color-primario);
+        }
+
+        .paginacion-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .paginacion-btn.activo {
+            background: var(--color-primario);
+            color: white;
+            border-color: var(--color-primario);
+        }
+
+        /* === Skeleton Loaders === */
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--color-fondo-secundario) 25%, var(--color-borde-claro) 50%, var(--color-fondo-secundario) 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        .skeleton-text {
+            height: 1em;
+            margin-bottom: 0.5em;
+        }
+
+        .skeleton-card {
+            height: 100px;
+            border-radius: 10px;
+        }
+
+        /* === Validación en tiempo real === */
+        .campo input:valid,
+        .campo select:valid {
+            border-color: var(--color-exito);
+        }
+
+        .campo input:invalid:not(:placeholder-shown),
+        .campo select:invalid {
+            border-color: var(--color-peligro);
+        }
+
+        .campo-error {
+            color: var(--color-peligro);
+            font-size: 0.8rem;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .campo.invalido .campo-error {
+            display: block;
+        }
+
+        .campo.invalido input,
+        .campo.invalido select {
+            border-color: var(--color-peligro);
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* === Focus States mejorados (Accesibilidad) === */
+        *:focus {
+            outline: none;
+        }
+
+        *:focus-visible {
+            outline: 3px solid var(--color-primario);
+            outline-offset: 2px;
+        }
+
+        .btn:focus-visible {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
+        }
+
+        /* === Skip Link (Accesibilidad) === */
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--color-primario);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 0 0 10px 10px;
+            z-index: 10000;
+            transition: top 0.3s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* === Empty States mejorados === */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-texto-secundario);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--color-texto);
+        }
+
+        .empty-state p {
+            margin-bottom: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* === Atajos de teclado tooltip === */
+        .shortcut-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            background: var(--color-fondo-secundario);
+            border: 1px solid var(--color-borde);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--color-texto-terciario);
+            margin-left: 8px;
+        }
+
+        .shortcut-badge kbd {
+            background: var(--color-fondo-tarjeta);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        /* === Ayuda de atajos === */
+        .shortcuts-help {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--color-fondo-tarjeta);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: var(--sombra-tarjeta);
+            z-index: 100;
+            display: none;
+            max-width: 300px;
+        }
+
+        .shortcuts-help.visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .shortcuts-help h4 {
+            margin-bottom: 10px;
+            color: var(--color-texto);
+        }
+
+        .shortcuts-help ul {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+
+        .shortcuts-help li {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--color-borde-claro);
+        }
+
+        .shortcuts-help li:last-child {
+            border-bottom: none;
+        }
+
+        /* === Botón flotante de ayuda === */
+        .btn-ayuda-flotante {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--gradiente-primario);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 99;
+            transition: transform 0.2s;
+        }
+
+        .btn-ayuda-flotante:hover {
+            transform: scale(1.1);
+        }
+
+        /* === Indicador de carga === */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        [data-tema="oscuro"] .loading-overlay {
+            background: rgba(26, 26, 46, 0.9);
+        }
+
+        .loading-overlay.visible {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--color-borde);
+            border-top-color: var(--color-primario);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* === Micro-animaciones === */
+        .tarjeta {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        tbody tr {
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        tbody tr:hover {
+            transform: translateX(5px);
+        }
+
+        /* === Responsive mejorado para móvil === */
+        @media (max-width: 768px) {
+            .shortcuts-help,
+            .btn-ayuda-flotante,
+            .shortcut-badge {
+                display: none !important;
+            }
+
+            .paginacion {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .resumen {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tarjeta .monto {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .resumen {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* === Sistema de Navegación por Tabs === */
+        .tabs-navegacion {
+            display: flex;
+            gap: 5px;
+            background: var(--color-fondo-tarjeta);
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: var(--sombra-tarjeta);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: var(--color-texto-secundario);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: var(--color-fondo-secundario);
+            color: var(--color-texto);
+        }
+
+        .tab-btn.activo {
+            background: var(--gradiente-primario);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab-btn .tab-icono {
+            font-size: 1.1rem;
+        }
+
+        .tab-contenido {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-contenido.activo {
+            display: block;
+        }
+
+        /* === Botón Flotante de Acción === */
+        .btn-accion-flotante {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--gradiente-primario);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.8rem;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-accion-flotante:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-accion-flotante:active {
+            transform: scale(0.95);
+        }
+
+        /* === Dashboard Compacto === */
+        .dashboard-compacto {
+            margin-bottom: 20px;
+        }
+
+        .dashboard-compacto .resumen {
+            margin-bottom: 0;
+        }
+
+        .dashboard-compacto .tarjeta {
+            padding: 15px;
+        }
+
+        .dashboard-compacto .tarjeta .icono {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .dashboard-compacto .tarjeta h3 {
+            font-size: 0.75rem;
+        }
+
+        .dashboard-compacto .tarjeta .monto {
+            font-size: 1.4rem;
+        }
+
+        .dashboard-compacto .tarjeta .subtexto {
+            font-size: 0.7rem;
+        }
+
+        /* === Secciones dentro de tabs === */
+        .tab-seccion {
+            background: var(--color-fondo-tarjeta);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--sombra-tarjeta);
+            border: var(--borde-tarjeta);
+        }
+
+        .tab-seccion h2 {
+            font-size: 1.2rem;
+            color: var(--color-texto);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-borde-claro);
+        }
+
+        /* === Modal de Acción Rápida === */
+        .modal-accion-rapida {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            background: var(--color-fondo-tarjeta);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 999;
+            width: 320px;
+            max-width: calc(100vw - 50px);
+            display: none;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-accion-rapida.visible {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-accion-rapida h3 {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: var(--color-texto);
+        }
+
+        .modal-accion-rapida .campo {
+            margin-bottom: 12px;
+        }
+
+        .modal-accion-rapida .campo label {
+            font-size: 0.8rem;
+        }
+
+        .modal-accion-rapida .campo input,
+        .modal-accion-rapida .campo select {
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        .modal-accion-rapida .btn-grupo {
+            margin-top: 15px;
+        }
+
+        /* === Responsive para Tabs === */
+        @media (max-width: 768px) {
+            .tabs-navegacion {
+                padding: 8px;
+                gap: 3px;
+                border-radius: 12px;
+            }
+
+            .tab-btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+                min-width: auto;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .tab-btn .tab-texto {
+                display: none;
+            }
+
+            .tab-btn .tab-icono {
+                font-size: 1.3rem;
+            }
+
+            .btn-accion-flotante {
+                bottom: 20px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+                font-size: 1.5rem;
+            }
+
+            .modal-accion-rapida {
+                right: 10px;
+                left: 10px;
+                width: auto;
+                bottom: 90px;
+            }
+
+            .dashboard-compacto .resumen {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .dashboard-compacto .tarjeta {
+                padding: 10px;
+            }
+
+            .dashboard-compacto .tarjeta .icono {
+                font-size: 1.2rem;
+            }
+
+            .dashboard-compacto .tarjeta h3 {
+                font-size: 0.65rem;
+            }
+
+            .dashboard-compacto .tarjeta .monto {
+                font-size: 1rem;
+            }
+
+            .dashboard-compacto .tarjeta .subtexto {
+                display: none;
+            }
+
+            .tab-seccion {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .tab-seccion h2 {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-compacto .resumen {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-compacto .tarjeta:last-child {
+                grid-column: span 2;
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- ==================== PIN DE SEGURIDAD ==================== -->
+    <div class="pin-overlay" id="pin-overlay">
+        <div class="pin-container">
+            <h2>🔐 Acceso Seguro</h2>
+            <p id="pin-mensaje">Ingresa tu PIN de 4 dígitos</p>
+            <div class="pin-input-container">
+                <input type="password" class="pin-input" maxlength="1" id="pin-1" oninput="moverPinInput(1)" onkeydown="manejarBackspacePin(event, 1)">
+                <input type="password" class="pin-input" maxlength="1" id="pin-2" oninput="moverPinInput(2)" onkeydown="manejarBackspacePin(event, 2)">
+                <input type="password" class="pin-input" maxlength="1" id="pin-3" oninput="moverPinInput(3)" onkeydown="manejarBackspacePin(event, 3)">
+                <input type="password" class="pin-input" maxlength="1" id="pin-4" oninput="moverPinInput(4)" onkeydown="manejarBackspacePin(event, 4)">
+            </div>
+            <p class="pin-error" id="pin-error">PIN incorrecto. Intenta de nuevo.</p>
+            <button class="btn btn-primario" onclick="verificarPin()" id="btn-pin">Ingresar</button>
+            <p style="margin-top: 15px; font-size: 0.8rem; color: var(--color-texto-terciario);">
+                <a href="#" onclick="mostrarConfigPin()" style="color: var(--color-primario);">Configurar/Cambiar PIN</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ==================== NOTIFICACIÓN TOAST ==================== -->
+    <div class="notificacion-toast" id="notificacion-toast">
+        <span class="toast-icono">⚠️</span>
+        <div class="toast-contenido">
+            <strong id="toast-titulo">Título</strong>
+            <p id="toast-mensaje" style="margin: 0; font-size: 0.85rem;">Mensaje</p>
+        </div>
+        <span class="cerrar-toast" onclick="cerrarToast()">×</span>
+    </div>
 
     <!-- ==================== ENCABEZADO ==================== -->
     <header>
@@ -1135,8 +2117,262 @@
             </div>
         </div>
 
-        <!-- ==================== SECCIÓN DE OBJETIVO DE AHORRO ==================== -->
-        <section>
+        <!-- ==================== NAVEGACIÓN POR TABS ==================== -->
+        <nav class="tabs-navegacion" role="tablist" aria-label="Secciones principales">
+            <button class="tab-btn activo" onclick="cambiarTab('movimientos')" role="tab" aria-selected="true" aria-controls="tab-movimientos" id="tab-btn-movimientos">
+                <span class="tab-icono">📋</span>
+                <span class="tab-texto">Movimientos</span>
+            </button>
+            <button class="tab-btn" onclick="cambiarTab('estadisticas')" role="tab" aria-selected="false" aria-controls="tab-estadisticas" id="tab-btn-estadisticas">
+                <span class="tab-icono">📊</span>
+                <span class="tab-texto">Estadísticas</span>
+            </button>
+            <button class="tab-btn" onclick="cambiarTab('configuracion')" role="tab" aria-selected="false" aria-controls="tab-configuracion" id="tab-btn-configuracion">
+                <span class="tab-icono">⚙️</span>
+                <span class="tab-texto">Configuración</span>
+            </button>
+        </nav>
+
+        <!-- ==================== TAB: MOVIMIENTOS ==================== -->
+        <div class="tab-contenido activo" id="tab-movimientos" role="tabpanel" aria-labelledby="tab-btn-movimientos">
+
+            <!-- Sección de Registro de Movimientos -->
+            <section class="tab-seccion">
+                <h2>➕ Registrar Nuevo Movimiento</h2>
+                
+                <!-- Mensaje de estado para feedback al usuario -->
+                <div class="mensaje" id="mensaje"></div>
+                
+                <!-- Formulario para agregar transacciones -->
+                <form id="formulario-movimiento" onsubmit="agregarMovimiento(event)">
+                    <div class="formulario-grid">
+                        <!-- Campo de tipo de transacción -->
+                        <div class="campo">
+                            <label for="tipo">Tipo *</label>
+                            <select id="tipo" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Ingreso">Ingreso</option>
+                                <option value="Gasto">Gasto</option>
+                                <option value="Ahorro">Ahorro 🐷</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Campo de categoría -->
+                        <div class="campo">
+                            <label for="categoria">Categoría *</label>
+                            <select id="categoria" required>
+                                <option value="">Seleccionar...</option>
+                                <!-- Las categorías se cargan dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <!-- Campo de monto -->
+                        <div class="campo">
+                            <label for="monto">Monto ($) *</label>
+                            <input type="number" id="monto" placeholder="Ej: 50000" min="0.01" step="0.01" required>
+                        </div>
+                        
+                        <!-- Campo de fecha -->
+                        <div class="campo">
+                            <label for="fecha">Fecha *</label>
+                            <input type="date" id="fecha" required>
+                        </div>
+                        
+                        <!-- Campo de descripción opcional -->
+                        <div class="campo" style="grid-column: 1 / -1;">
+                            <label for="descripcion">Descripción (opcional)</label>
+                            <textarea id="descripcion" placeholder="Ej: Pago de nómina quincenal..."></textarea>
+                        </div>
+
+                        <!-- Campo de etiquetas -->
+                        <div class="campo" style="grid-column: 1 / -1;">
+                            <label for="etiquetas">Etiquetas (separadas por coma)</label>
+                            <input type="text" id="etiquetas" placeholder="Ej: trabajo, mensual, importante">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primario">Agregar Movimiento</button>
+                </form>
+            </section>
+
+            <!-- Sección de Historial de Movimientos -->
+            <section class="tab-seccion">
+                <h2>📋 Historial de Movimientos</h2>
+                
+                <!-- Herramientas de exportación -->
+                <div class="herramientas">
+                    <button class="btn btn-secundario btn-pequeno" onclick="exportarCSV()">📥 Exportar CSV</button>
+                    <button class="btn btn-secundario btn-pequeno" onclick="exportarJSON()">📦 Exportar JSON</button>
+                    <button class="btn btn-eliminar btn-pequeno" onclick="limpiarTodosDatos()">🗑️ Limpiar Todo</button>
+                </div>
+                
+                <!-- Filtros para la tabla -->
+                <div class="filtros">
+                    <div class="busqueda-container">
+                        <input type="text" id="filtro-busqueda" placeholder="Buscar en descripción..." oninput="aplicarFiltrosConDebounce()" aria-label="Buscar movimientos">
+                    </div>
+                    <div class="campo">
+                        <label for="filtro-tipo">Filtrar por tipo</label>
+                        <select id="filtro-tipo" onchange="aplicarFiltros()">
+                            <option value="">Todos</option>
+                            <option value="Ingreso">Ingresos</option>
+                            <option value="Gasto">Gastos</option>
+                            <option value="Ahorro">Ahorros</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="filtro-categoria">Filtrar por categoría</label>
+                        <select id="filtro-categoria" onchange="aplicarFiltros()">
+                            <option value="">Todas</option>
+                            <!-- Las opciones se llenarán dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="filtro-fecha-desde">Desde</label>
+                        <input type="date" id="filtro-fecha-desde" onchange="aplicarFiltros()">
+                    </div>
+                    <div class="campo">
+                        <label for="filtro-fecha-hasta">Hasta</label>
+                        <input type="date" id="filtro-fecha-hasta" onchange="aplicarFiltros()">
+                    </div>
+                    <button class="btn btn-secundario" onclick="limpiarFiltros()">Limpiar filtros</button>
+                </div>
+                
+                <!-- Tabla de movimientos -->
+                <div class="tabla-container" role="region" aria-label="Historial de movimientos">
+                    <table id="tabla-movimientos" role="table" aria-describedby="tabla-descripcion">
+                        <caption id="tabla-descripcion" class="sr-only">Lista de movimientos financieros con fecha, tipo, categoría, descripción y monto</caption>
+                        <thead>
+                            <tr role="row">
+                                <th onclick="ordenarTabla('fecha')">
+                                    Fecha <span class="flecha" id="flecha-fecha"></span>
+                                </th>
+                                <th onclick="ordenarTabla('tipo')">
+                                    Tipo <span class="flecha" id="flecha-tipo"></span>
+                                </th>
+                                <th onclick="ordenarTabla('categoria')">
+                                    Categoría <span class="flecha" id="flecha-categoria"></span>
+                                </th>
+                                <th>Descripción</th>
+                                <th onclick="ordenarTabla('monto')">
+                                    Monto <span class="flecha" id="flecha-monto"></span>
+                                </th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpo-tabla">
+                            <!-- Los movimientos se renderizarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                    
+                    <!-- Mensaje cuando no hay datos -->
+                    <div class="sin-datos empty-state" id="sin-datos">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>No hay movimientos registrados</h3>
+                        <p>¡Comienza agregando tu primer ingreso, gasto o ahorro para llevar el control de tus finanzas!</p>
+                        <button class="btn btn-primario" onclick="document.getElementById('tipo').focus();">
+                            ➕ Agregar primer movimiento
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Calendario -->
+            <section class="tab-seccion">
+                <h2>📅 Calendario de Movimientos</h2>
+                <div class="calendario-container">
+                    <div class="calendario-header">
+                        <h3 id="calendario-titulo">Diciembre 2025</h3>
+                        <div class="calendario-nav">
+                            <button onclick="navegarCalendario(-1)">◀</button>
+                            <button onclick="navegarCalendario(0)">Hoy</button>
+                            <button onclick="navegarCalendario(1)">▶</button>
+                        </div>
+                    </div>
+                    <div class="calendario-grid" id="calendario-grid">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                    <div class="calendario-detalle" id="calendario-detalle">
+                        <h4 id="calendario-detalle-fecha">Movimientos del día</h4>
+                        <div id="calendario-detalle-lista"></div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ==================== TAB: ESTADÍSTICAS ==================== -->
+        <div class="tab-contenido" id="tab-estadisticas" role="tabpanel" aria-labelledby="tab-btn-estadisticas">
+
+            <!-- Sección de Resumen por Categorías -->
+            <section class="tab-seccion">
+                <h2>📊 Resumen por Categorías (Este Mes)</h2>
+                <div class="categorias-grid" id="resumen-categorias">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <div class="sin-datos" id="sin-categorias" style="display: none;">
+                    Agrega movimientos para ver el resumen por categorías.
+                </div>
+            </section>
+
+            <!-- Sección de Gráficos -->
+            <section class="tab-seccion">
+                <h2>📈 Gráficos y Estadísticas</h2>
+                
+                <!-- Selector de período -->
+                <div class="periodo-selector">
+                    <label for="grafico-mes">Mes:</label>
+                    <select id="grafico-mes" onchange="actualizarGraficos()">
+                        <!-- Se llena dinámicamente -->
+                    </select>
+                    <label for="grafico-anio">Año:</label>
+                    <select id="grafico-anio" onchange="actualizarGraficos()">
+                        <!-- Se llena dinámicamente -->
+                    </select>
+                </div>
+                
+                <div class="graficos-container">
+                    <div class="grafico-wrapper">
+                        <h4>Distribución de Gastos</h4>
+                        <canvas id="grafico-gastos" class="grafico-canvas"></canvas>
+                    </div>
+                    <div class="grafico-wrapper">
+                        <h4>Ingresos vs Gastos</h4>
+                        <canvas id="grafico-balance" class="grafico-canvas"></canvas>
+                    </div>
+                    <div class="grafico-wrapper">
+                        <h4>Tendencia Mensual</h4>
+                        <canvas id="grafico-tendencia" class="grafico-canvas"></canvas>
+                    </div>
+                    <div class="grafico-wrapper">
+                        <h4>Distribución de Ingresos</h4>
+                        <canvas id="grafico-ingresos" class="grafico-canvas"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Control de Gastos -->
+            <section class="tab-seccion">
+                <h2>💰 Control de Gastos por Categoría</h2>
+                <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">
+                    📊 Comparación automática de tus gastos actuales vs. el promedio de los últimos 3 meses.
+                </p>
+                
+                <div class="presupuestos-grid" id="presupuestos-lista">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <div class="sin-datos" id="sin-presupuestos" style="display: none;">
+                    Aún no tienes gastos registrados. ¡Comienza a registrar para ver el análisis!
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ==================== TAB: CONFIGURACIÓN ==================== -->
+        <div class="tab-contenido" id="tab-configuracion" role="tabpanel" aria-labelledby="tab-btn-configuracion">
+
+            <!-- Sección de Objetivo de Ahorro -->
+            <section class="tab-seccion">
             <h2>🎯 Objetivo de Ahorro Mensual</h2>
             <div class="objetivo-container">
                 <div class="objetivo-input">
@@ -1159,315 +2395,226 @@
             </div>
         </section>
 
-        <!-- ==================== SECCIÓN DE GESTIÓN DE CATEGORÍAS ==================== -->
-        <section>
-            <h2>🏷️ Gestionar Categorías</h2>
-            <p style="color: #666; margin-bottom: 15px;">Agrega tus propias categorías personalizadas para organizar mejor tus finanzas.</p>
-            
-            <div class="categorias-personalizadas">
-                <h4>📥 Categorías de Ingreso</h4>
-                <div class="lista-categorias" id="lista-categorias-ingreso">
-                    <!-- Se llenan dinámicamente -->
+            <!-- Sección de Gestión de Categorías -->
+            <section class="tab-seccion">
+                <h2>🏷️ Gestionar Categorías</h2>
+                <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">Agrega tus propias categorías personalizadas para organizar mejor tus finanzas.</p>
+                
+                <div class="categorias-personalizadas">
+                    <h4>📥 Categorías de Ingreso</h4>
+                    <div class="lista-categorias" id="lista-categorias-ingreso">
+                        <!-- Se llenan dinámicamente -->
+                    </div>
+                    
+                    <h4 style="margin-top: 20px;">📤 Categorías de Gasto</h4>
+                    <div class="lista-categorias" id="lista-categorias-gasto">
+                        <!-- Se llenan dinámicamente -->
+                    </div>
+                    
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--color-borde);">
+                    
+                    <h4>➕ Agregar Nueva Categoría</h4>
+                    <div class="agregar-categoria-form">
+                        <div class="campo">
+                            <label for="nueva-categoria-tipo">Tipo</label>
+                            <select id="nueva-categoria-tipo">
+                                <option value="Ingreso">Ingreso</option>
+                                <option value="Gasto">Gasto</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="nueva-categoria-nombre">Nombre de la categoría</label>
+                            <input type="text" id="nueva-categoria-nombre" placeholder="Ej: Bonificaciones">
+                        </div>
+                        <div class="campo">
+                            <label for="nueva-categoria-icono">Icono (emoji)</label>
+                            <input type="text" id="nueva-categoria-icono" placeholder="Ej: 🎁" maxlength="2">
+                        </div>
+                        <button class="btn btn-exito" onclick="agregarCategoriaPersonalizada()">Agregar</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Movimientos Recurrentes -->
+            <section class="tab-seccion">
+                <h2>🔄 Movimientos Recurrentes</h2>
+                <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">
+                    Configura ingresos o gastos que se repiten automáticamente (salario, suscripciones, arriendo).
+                </p>
+                
+                <div class="recurrentes-lista" id="recurrentes-lista">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <div class="sin-datos" id="sin-recurrentes" style="display: none;">
+                    No hay movimientos recurrentes configurados.
                 </div>
                 
-                <h4 style="margin-top: 20px;">📤 Categorías de Gasto</h4>
-                <div class="lista-categorias" id="lista-categorias-gasto">
-                    <!-- Se llenan dinámicamente -->
-                </div>
-                
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
-                
-                <h4>➕ Agregar Nueva Categoría</h4>
-                <div class="agregar-categoria-form">
+                <div class="agregar-categoria-form" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-borde);">
                     <div class="campo">
-                        <label for="nueva-categoria-tipo">Tipo</label>
-                        <select id="nueva-categoria-tipo">
+                        <label for="recurrente-tipo">Tipo</label>
+                        <select id="recurrente-tipo" onchange="actualizarCategoriasRecurrente()">
                             <option value="Ingreso">Ingreso</option>
                             <option value="Gasto">Gasto</option>
+                            <option value="Ahorro">Ahorro</option>
                         </select>
                     </div>
                     <div class="campo">
-                        <label for="nueva-categoria-nombre">Nombre de la categoría</label>
-                        <input type="text" id="nueva-categoria-nombre" placeholder="Ej: Bonificaciones">
+                        <label for="recurrente-categoria">Categoría</label>
+                        <select id="recurrente-categoria">
+                            <!-- Se llena dinámicamente -->
+                        </select>
                     </div>
                     <div class="campo">
-                        <label for="nueva-categoria-icono">Icono (emoji)</label>
-                        <input type="text" id="nueva-categoria-icono" placeholder="Ej: 🎁" maxlength="2">
+                        <label for="recurrente-descripcion">Descripción</label>
+                        <input type="text" id="recurrente-descripcion" placeholder="Ej: Salario mensual">
                     </div>
-                    <button class="btn btn-exito" onclick="agregarCategoriaPersonalizada()">Agregar</button>
+                    <div class="campo">
+                        <label for="recurrente-monto">Monto ($)</label>
+                        <input type="number" id="recurrente-monto" placeholder="Ej: 3000000" min="0">
+                    </div>
+                    <div class="campo">
+                        <label for="recurrente-frecuencia">Frecuencia</label>
+                        <select id="recurrente-frecuencia">
+                            <option value="semanal">Semanal</option>
+                            <option value="quincenal">Quincenal</option>
+                            <option value="mensual" selected>Mensual</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="recurrente-dia">Día del mes</label>
+                        <input type="number" id="recurrente-dia" placeholder="1-31" min="1" max="31" value="1">
+                    </div>
+                    <button class="btn btn-exito" onclick="agregarRecurrente()">Agregar Recurrente</button>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- ==================== SECCIÓN DE REGISTRO DE MOVIMIENTOS ==================== -->
-        <section>
-            <h2>➕ Registrar Nuevo Movimiento</h2>
-            
-            <!-- Mensaje de estado para feedback al usuario -->
-            <div class="mensaje" id="mensaje"></div>
-            
-            <!-- Formulario para agregar transacciones -->
-            <form id="formulario-movimiento" onsubmit="agregarMovimiento(event)">
-                <div class="formulario-grid">
-                    <!-- Campo de tipo de transacción -->
-                    <div class="campo">
-                        <label for="tipo">Tipo *</label>
-                        <select id="tipo" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="Ingreso">Ingreso</option>
-                            <option value="Gasto">Gasto</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Campo de categoría -->
-                    <div class="campo">
-                        <label for="categoria">Categoría *</label>
-                        <select id="categoria" required>
-                            <option value="">Seleccionar...</option>
-                            <!-- Las categorías se cargan dinámicamente -->
-                        </select>
-                    </div>
-                    
-                    <!-- Campo de monto -->
-                    <div class="campo">
-                        <label for="monto">Monto ($) *</label>
-                        <input type="number" id="monto" placeholder="Ej: 50000" min="0.01" step="0.01" required>
-                    </div>
-                    
-                    <!-- Campo de fecha -->
-                    <div class="campo">
-                        <label for="fecha">Fecha *</label>
-                        <input type="date" id="fecha" required>
-                    </div>
-                    
-                    <!-- Campo de descripción opcional -->
-                    <div class="campo" style="grid-column: 1 / -1;">
-                        <label for="descripcion">Descripción (opcional)</label>
-                        <textarea id="descripcion" placeholder="Ej: Pago de nómina quincenal..."></textarea>
+            <!-- Sección de Importar/Exportar -->
+            <section class="tab-seccion">
+                <h2>📁 Almacenamiento y Respaldo de Datos</h2>
+                
+                <!-- Opciones de exportación básica -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px;">📤 Exportar Datos</h4>
+                    <div class="herramientas">
+                        <button class="btn btn-secundario" onclick="exportarCSV()">📥 Exportar CSV</button>
+                        <button class="btn btn-secundario" onclick="exportarJSON()">📦 Exportar JSON</button>
+                        <button class="btn btn-secundario" onclick="generarReportePDF()">📋 Reporte PDF</button>
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-primario">Agregar Movimiento</button>
-            </form>
-        </section>
+                <!-- Importar archivo -->
+                <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-borde);">
+                    <h4 style="margin-bottom: 10px;">📥 Importar Datos</h4>
+                    <div class="importar-zona" id="zona-importar" onclick="document.getElementById('archivo-importar').click()">
+                        <p>📂 Arrastra un archivo aquí o haz clic para importar</p>
+                        <p style="font-size: 0.85rem;">Soporta archivos .json (backup completo) o .csv (movimientos)</p>
+                        <input type="file" id="archivo-importar" class="importar-input" accept=".json,.csv" onchange="importarArchivo(event)">
+                    </div>
+                </div>
 
-        <!-- ==================== SECCIÓN DE TABLA DE MOVIMIENTOS ==================== -->
-        <section>
-            <h2>📋 Historial de Movimientos</h2>
-            
-            <!-- Herramientas de exportación -->
-            <div class="herramientas">
-                <button class="btn btn-secundario btn-pequeno" onclick="exportarCSV()">📥 Exportar CSV</button>
-                <button class="btn btn-secundario btn-pequeno" onclick="exportarJSON()">📦 Exportar JSON</button>
-                <button class="btn btn-eliminar btn-pequeno" onclick="limpiarTodosDatos()">🗑️ Limpiar Todo</button>
-            </div>
-            
-            <!-- Filtros para la tabla -->
-            <div class="filtros">
-                <div class="busqueda-container">
-                    <input type="text" id="filtro-busqueda" placeholder="Buscar en descripción..." oninput="aplicarFiltros()">
+                <!-- File System API - Archivo Local Persistente -->
+                <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-borde);">
+                    <h4 style="margin-bottom: 10px;">💾 Archivo Local Persistente</h4>
+                    <p style="color: var(--color-texto-secundario); font-size: 0.9rem; margin-bottom: 15px;">
+                        Guarda tus datos en un archivo en tu computadora. Sobrevive a limpieza de caché. 
+                        <strong>Solo Chrome/Edge</strong>.
+                    </p>
+                    <div class="btn-grupo">
+                        <button class="btn btn-primario" onclick="guardarArchivoLocal()">💾 Guardar en Archivo</button>
+                        <button class="btn btn-secundario" onclick="cargarArchivoLocal()">📂 Cargar desde Archivo</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                            <input type="checkbox" id="auto-guardar-archivo" onchange="toggleAutoGuardadoArchivo()">
+                            Auto-guardar cada vez que haya cambios
+                        </label>
+                    </div>
+                    <div class="sync-status" id="archivo-status" style="margin-top: 10px;">
+                        <span>📄</span>
+                        <span id="archivo-texto">Sin archivo vinculado</span>
+                    </div>
                 </div>
-                <div class="campo">
-                    <label for="filtro-tipo">Filtrar por tipo</label>
-                    <select id="filtro-tipo" onchange="aplicarFiltros()">
-                        <option value="">Todos</option>
-                        <option value="Ingreso">Ingresos</option>
-                        <option value="Gasto">Gastos</option>
-                    </select>
-                </div>
-                <div class="campo">
-                    <label for="filtro-categoria">Filtrar por categoría</label>
-                    <select id="filtro-categoria" onchange="aplicarFiltros()">
-                        <option value="">Todas</option>
-                        <!-- Las opciones se llenarán dinámicamente -->
-                    </select>
-                </div>
-                <div class="campo">
-                    <label for="filtro-fecha-desde">Desde</label>
-                    <input type="date" id="filtro-fecha-desde" onchange="aplicarFiltros()">
-                </div>
-                <div class="campo">
-                    <label for="filtro-fecha-hasta">Hasta</label>
-                    <input type="date" id="filtro-fecha-hasta" onchange="aplicarFiltros()">
-                </div>
-                <button class="btn btn-secundario" onclick="limpiarFiltros()">Limpiar filtros</button>
-            </div>
-            
-            <!-- Tabla de movimientos -->
-            <div class="tabla-container">
-                <table id="tabla-movimientos">
-                    <thead>
-                        <tr>
-                            <th onclick="ordenarTabla('fecha')">
-                                Fecha <span class="flecha" id="flecha-fecha"></span>
-                            </th>
-                            <th onclick="ordenarTabla('tipo')">
-                                Tipo <span class="flecha" id="flecha-tipo"></span>
-                            </th>
-                            <th onclick="ordenarTabla('categoria')">
-                                Categoría <span class="flecha" id="flecha-categoria"></span>
-                            </th>
-                            <th>Descripción</th>
-                            <th onclick="ordenarTabla('monto')">
-                                Monto <span class="flecha" id="flecha-monto"></span>
-                            </th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cuerpo-tabla">
-                        <!-- Los movimientos se renderizarán aquí dinámicamente -->
-                    </tbody>
-                </table>
-                
-                <!-- Mensaje cuando no hay datos -->
-                <div class="sin-datos" id="sin-datos">
-                    No hay movimientos registrados. ¡Comienza agregando tu primer ingreso o gasto!
-                </div>
-            </div>
-        </section>
 
-        <!-- ==================== SECCIÓN DE RESUMEN POR CATEGORÍAS ==================== -->
-        <section>
-            <h2>📊 Resumen por Categorías (Este Mes)</h2>
-            <div class="categorias-grid" id="resumen-categorias">
+                <!-- GitHub Gist - Sincronización en la Nube -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px;">☁️ Sincronización con GitHub Gist</h4>
+                    <p style="color: var(--color-texto-secundario); font-size: 0.9rem; margin-bottom: 15px;">
+                        Guarda tus datos en la nube de forma gratuita. Accede desde cualquier dispositivo.
+                    </p>
+                    
+                    <!-- Configuración de GitHub -->
+                    <div id="github-config" style="background: var(--color-fondo-secundario); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <div class="campo" style="margin-bottom: 10px;">
+                            <label for="github-token">Token de GitHub (Personal Access Token)</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx" style="flex: 1;">
+                                <button class="btn btn-secundario btn-pequeno" onclick="toggleVerToken()">👁️</button>
+                            </div>
+                            <small style="color: var(--color-texto-terciario);">
+                                <a href="#" onclick="mostrarAyudaGitHub()" style="color: var(--color-primario);">¿Cómo obtener un token?</a>
+                            </small>
+                        </div>
+                        <div class="campo" style="margin-bottom: 10px;">
+                            <label for="gist-id">ID del Gist (opcional, para sincronizar con uno existente)</label>
+                            <input type="text" id="gist-id" placeholder="Dejar vacío para crear uno nuevo">
+                        </div>
+                        <button class="btn btn-exito btn-pequeno" onclick="guardarConfigGitHub()">💾 Guardar Configuración</button>
+                    </div>
+                    
+                    <div class="btn-grupo">
+                        <button class="btn btn-primario" onclick="sincronizarGitHub()">☁️ Sincronizar con GitHub</button>
+                        <button class="btn btn-secundario" onclick="cargarDesdeGitHub()">📥 Descargar de GitHub</button>
+                    </div>
+                    
+                    <div class="sync-status" id="github-status" style="margin-top: 10px;">
+                        <span class="sync-icon">☁️</span>
+                        <span id="github-texto">No configurado</span>
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+        <!-- Fin de TAB: CONFIGURACIÓN -->
+
+    </div>
+    <!-- Fin de .container -->
+
+    <!-- ==================== BOTÓN FLOTANTE DE ACCIÓN RÁPIDA ==================== -->
+    <button class="btn-accion-flotante" onclick="toggleModalAccionRapida()" aria-label="Agregar movimiento rápido" title="Agregar movimiento">
+        +
+    </button>
+
+    <!-- ==================== MODAL DE ACCIÓN RÁPIDA ==================== -->
+    <div class="modal-accion-rapida" id="modal-accion-rapida">
+        <h3>➕ Agregar Movimiento Rápido</h3>
+        <div class="campo">
+            <label for="rapido-tipo">Tipo</label>
+            <select id="rapido-tipo" onchange="actualizarCategoriasRapido()">
+                <option value="Gasto">Gasto</option>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Ahorro">Ahorro</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="rapido-categoria">Categoría</label>
+            <select id="rapido-categoria">
                 <!-- Se llena dinámicamente -->
-            </div>
-            <div class="sin-datos" id="sin-categorias" style="display: none;">
-                Agrega movimientos para ver el resumen por categorías.
-            </div>
-        </section>
-
-        <!-- ==================== SECCIÓN DE GRÁFICOS ==================== -->
-        <section>
-            <h2>📈 Gráficos y Estadísticas</h2>
-            
-            <!-- Selector de período -->
-            <div class="periodo-selector">
-                <label for="grafico-mes">Mes:</label>
-                <select id="grafico-mes" onchange="actualizarGraficos()">
-                    <!-- Se llena dinámicamente -->
-                </select>
-                <label for="grafico-anio">Año:</label>
-                <select id="grafico-anio" onchange="actualizarGraficos()">
-                    <!-- Se llena dinámicamente -->
-                </select>
-            </div>
-            
-            <div class="graficos-container">
-                <div class="grafico-wrapper">
-                    <h4>Distribución de Gastos</h4>
-                    <canvas id="grafico-gastos" class="grafico-canvas"></canvas>
-                </div>
-                <div class="grafico-wrapper">
-                    <h4>Ingresos vs Gastos</h4>
-                    <canvas id="grafico-balance" class="grafico-canvas"></canvas>
-                </div>
-                <div class="grafico-wrapper">
-                    <h4>Tendencia Mensual</h4>
-                    <canvas id="grafico-tendencia" class="grafico-canvas"></canvas>
-                </div>
-                <div class="grafico-wrapper">
-                    <h4>Distribución de Ingresos</h4>
-                    <canvas id="grafico-ingresos" class="grafico-canvas"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== SECCIÓN DE PRESUPUESTOS ==================== -->
-        <section>
-            <h2>💰 Presupuestos por Categoría</h2>
-            <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">
-                Establece límites de gasto mensuales por categoría para controlar mejor tus finanzas.
-            </p>
-            
-            <div class="presupuestos-grid" id="presupuestos-lista">
-                <!-- Se llena dinámicamente -->
-            </div>
-            
-            <div class="agregar-presupuesto-form">
-                <div class="campo">
-                    <label for="presupuesto-categoria">Categoría</label>
-                    <select id="presupuesto-categoria">
-                        <!-- Se llena dinámicamente -->
-                    </select>
-                </div>
-                <div class="campo">
-                    <label for="presupuesto-limite">Límite mensual ($)</label>
-                    <input type="number" id="presupuesto-limite" placeholder="Ej: 500000" min="0">
-                </div>
-                <button class="btn btn-primario" onclick="agregarPresupuesto()">Agregar Presupuesto</button>
-            </div>
-        </section>
-
-        <!-- ==================== SECCIÓN DE MOVIMIENTOS RECURRENTES ==================== -->
-        <section>
-            <h2>🔄 Movimientos Recurrentes</h2>
-            <p style="color: var(--color-texto-secundario); margin-bottom: 15px;">
-                Configura ingresos o gastos que se repiten automáticamente (salario, suscripciones, arriendo).
-            </p>
-            
-            <div class="recurrentes-lista" id="recurrentes-lista">
-                <!-- Se llena dinámicamente -->
-            </div>
-            <div class="sin-datos" id="sin-recurrentes" style="display: none;">
-                No hay movimientos recurrentes configurados.
-            </div>
-            
-            <div class="agregar-categoria-form" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-borde);">
-                <div class="campo">
-                    <label for="recurrente-tipo">Tipo</label>
-                    <select id="recurrente-tipo" onchange="actualizarCategoriasRecurrente()">
-                        <option value="Ingreso">Ingreso</option>
-                        <option value="Gasto">Gasto</option>
-                    </select>
-                </div>
-                <div class="campo">
-                    <label for="recurrente-categoria">Categoría</label>
-                    <select id="recurrente-categoria">
-                        <!-- Se llena dinámicamente -->
-                    </select>
-                </div>
-                <div class="campo">
-                    <label for="recurrente-descripcion">Descripción</label>
-                    <input type="text" id="recurrente-descripcion" placeholder="Ej: Salario mensual">
-                </div>
-                <div class="campo">
-                    <label for="recurrente-monto">Monto ($)</label>
-                    <input type="number" id="recurrente-monto" placeholder="Ej: 3000000" min="0">
-                </div>
-                <div class="campo">
-                    <label for="recurrente-frecuencia">Frecuencia</label>
-                    <select id="recurrente-frecuencia">
-                        <option value="semanal">Semanal</option>
-                        <option value="quincenal">Quincenal</option>
-                        <option value="mensual" selected>Mensual</option>
-                        <option value="anual">Anual</option>
-                    </select>
-                </div>
-                <div class="campo">
-                    <label for="recurrente-dia">Día del mes</label>
-                    <input type="number" id="recurrente-dia" placeholder="1-31" min="1" max="31" value="1">
-                </div>
-                <button class="btn btn-exito" onclick="agregarRecurrente()">Agregar Recurrente</button>
-            </div>
-        </section>
-
-        <!-- ==================== SECCIÓN DE IMPORTAR/EXPORTAR ==================== -->
-        <section>
-            <h2>📁 Importar y Exportar Datos</h2>
-            
-            <div class="herramientas">
-                <button class="btn btn-secundario" onclick="exportarCSV()">📥 Exportar CSV</button>
-                <button class="btn btn-secundario" onclick="exportarJSON()">📦 Exportar JSON Completo</button>
-            </div>
-            
-            <div class="importar-zona" id="zona-importar" onclick="document.getElementById('archivo-importar').click()">
-                <p>📂 Arrastra un archivo aquí o haz clic para importar</p>
-                <p style="font-size: 0.85rem;">Soporta archivos .json (backup completo) o .csv (movimientos)</p>
-                <input type="file" id="archivo-importar" class="importar-input" accept=".json,.csv" onchange="importarArchivo(event)">
-            </div>
-        </section>
-
+            </select>
+        </div>
+        <div class="campo">
+            <label for="rapido-monto">Monto ($)</label>
+            <input type="number" id="rapido-monto" placeholder="Ej: 50000" min="0.01" step="0.01">
+        </div>
+        <div class="campo">
+            <label for="rapido-descripcion">Descripción</label>
+            <input type="text" id="rapido-descripcion" placeholder="Ej: Almuerzo">
+        </div>
+        <div class="btn-grupo">
+            <button class="btn btn-secundario btn-pequeno" onclick="toggleModalAccionRapida()">Cancelar</button>
+            <button class="btn btn-primario btn-pequeno" onclick="agregarMovimientoRapido()">Agregar</button>
+        </div>
     </div>
 
     <!-- ==================== MODAL DE EDICIÓN ==================== -->
@@ -1481,6 +2628,7 @@
                     <select id="editar-tipo" onchange="actualizarCategoriasEditar()">
                         <option value="Ingreso">Ingreso</option>
                         <option value="Gasto">Gasto</option>
+                        <option value="Ahorro">Ahorro</option>
                     </select>
                 </div>
                 <div class="campo">
@@ -1498,6 +2646,10 @@
                 <div class="campo" style="grid-column: 1 / -1;">
                     <label for="editar-descripcion">Descripción</label>
                     <textarea id="editar-descripcion"></textarea>
+                </div>
+                <div class="campo" style="grid-column: 1 / -1;">
+                    <label for="editar-etiquetas">Etiquetas (separadas por coma)</label>
+                    <input type="text" id="editar-etiquetas" placeholder="Ej: trabajo, mensual">
                 </div>
             </div>
             <div class="modal-botones">
@@ -1536,6 +2688,18 @@
                 { nombre: 'Préstamos recibidos', icono: '🤝' },
                 { nombre: 'Otros ingresos', icono: '💰' }
             ],
+            Ahorro: [
+                { nombre: 'Fondo de emergencia', icono: '🛡️' },
+                { nombre: 'Meta específica', icono: '🎯' },
+                { nombre: 'Inversión', icono: '📈' },
+                { nombre: 'Retiro/Pensión', icono: '👴' },
+                { nombre: 'Educación', icono: '🎓' },
+                { nombre: 'Viaje', icono: '✈️' },
+                { nombre: 'Vivienda', icono: '🏠' },
+                { nombre: 'Vehículo', icono: '🚗' },
+                { nombre: 'Tecnología', icono: '💻' },
+                { nombre: 'Otro ahorro', icono: '🐷' }
+            ],
             Gasto: [
                 { nombre: 'Comida', icono: '🍔' },
                 { nombre: 'Supermercado', icono: '🛒' },
@@ -1566,7 +2730,8 @@
         // Categorías personalizadas del usuario
         let categoriasPersonalizadas = {
             Ingreso: [],
-            Gasto: []
+            Gasto: [],
+            Ahorro: []
         };
 
         // Presupuestos por categoría
@@ -1577,6 +2742,25 @@
 
         // Instancias de gráficos Chart.js
         let graficos = {};
+
+        // PIN de seguridad
+        let pinSeguridad = null;
+        let pinConfigurado = false;
+
+        // Calendario
+        let calendarioMes = new Date().getMonth();
+        let calendarioAnio = new Date().getFullYear();
+        let calendarioDiaSeleccionado = null;
+
+        // Sincronización
+        let ultimaSincronizacion = null;
+
+        // Paginación
+        let paginaActual = 1;
+        const itemsPorPagina = 15;
+
+        // Debounce timer
+        let debounceTimer = null;
         
         // ==================== INICIALIZACIÓN ====================
         
@@ -1615,6 +2799,19 @@
             cargarCategoriasPresupuesto();
             verificarRecurrentesPendientes();
             configurarImportacion();
+            
+            // Nuevas funcionalidades v2.0
+            verificarPinSeguridad();
+            inicializarCalendario();
+            verificarYEjecutarRecurrentes();
+            verificarPresupuestosExcedidos();
+            
+            // Sistema de tabs
+            restaurarTabActivo();
+            actualizarCategoriasRapido();
+            
+            // Cargar configuración de GitHub si existe
+            cargarConfigGitHub();
         }
         
         // ==================== FUNCIONES DE TEMA ====================
@@ -1651,6 +2848,155 @@
                 cambiarTema(temaGuardado);
             }
         }
+
+        // ==================== FUNCIONES DE TABS ====================
+
+        /**
+         * Cambia entre las pestañas de navegación
+         * @param {string} tabId - ID del tab a mostrar ('movimientos', 'estadisticas', 'configuracion')
+         */
+        function cambiarTab(tabId) {
+            // Ocultar todos los contenidos de tabs
+            document.querySelectorAll('.tab-contenido').forEach(tab => {
+                tab.classList.remove('activo');
+            });
+            
+            // Desactivar todos los botones de tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('activo');
+                btn.setAttribute('aria-selected', 'false');
+            });
+            
+            // Mostrar el contenido del tab seleccionado
+            const tabContenido = document.getElementById(`tab-${tabId}`);
+            if (tabContenido) {
+                tabContenido.classList.add('activo');
+            }
+            
+            // Activar el botón del tab seleccionado
+            const tabBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (tabBtn) {
+                tabBtn.classList.add('activo');
+                tabBtn.setAttribute('aria-selected', 'true');
+            }
+            
+            // Si es el tab de estadísticas, actualizar los gráficos
+            if (tabId === 'estadisticas') {
+                setTimeout(() => {
+                    actualizarGraficos();
+                }, 100);
+            }
+            
+            // Guardar el tab activo en localStorage
+            localStorage.setItem('finanzas_tab_activo', tabId);
+        }
+
+        /**
+         * Restaura el tab activo guardado al cargar la página
+         */
+        function restaurarTabActivo() {
+            const tabGuardado = localStorage.getItem('finanzas_tab_activo');
+            if (tabGuardado) {
+                cambiarTab(tabGuardado);
+            }
+        }
+
+        // ==================== FUNCIONES DE MODAL ACCIÓN RÁPIDA ====================
+
+        /**
+         * Muestra/oculta el modal de acción rápida
+         */
+        function toggleModalAccionRapida() {
+            const modal = document.getElementById('modal-accion-rapida');
+            modal.classList.toggle('visible');
+            
+            // Si se abre el modal, cargar categorías y enfocar el primer campo
+            if (modal.classList.contains('visible')) {
+                actualizarCategoriasRapido();
+                document.getElementById('rapido-monto').focus();
+            }
+        }
+
+        /**
+         * Actualiza las categorías del modal de acción rápida según el tipo seleccionado
+         */
+        function actualizarCategoriasRapido() {
+            const tipo = document.getElementById('rapido-tipo').value;
+            const selectCategoria = document.getElementById('rapido-categoria');
+            
+            selectCategoria.innerHTML = '';
+            
+            const categorias = obtenerCategorias(tipo);
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nombre;
+                option.textContent = `${cat.icono} ${cat.nombre}`;
+                selectCategoria.appendChild(option);
+            });
+        }
+
+        /**
+         * Agrega un movimiento desde el modal de acción rápida
+         */
+        function agregarMovimientoRapido() {
+            const tipo = document.getElementById('rapido-tipo').value;
+            const categoria = document.getElementById('rapido-categoria').value;
+            const monto = parseFloat(document.getElementById('rapido-monto').value);
+            const descripcion = document.getElementById('rapido-descripcion').value.trim();
+            
+            // Validar
+            if (!categoria || isNaN(monto) || monto <= 0) {
+                mostrarToast('Error', 'Por favor, completa los campos correctamente', 'error');
+                return;
+            }
+            
+            // Crear movimiento
+            const nuevoMovimiento = {
+                id: Date.now(),
+                tipo: tipo,
+                categoria: categoria,
+                monto: monto,
+                fecha: new Date().toISOString().split('T')[0],
+                descripcion: descripcion || '-'
+            };
+            
+            // Agregar al array
+            movimientos.push(nuevoMovimiento);
+            
+            // Guardar
+            guardarDatosLocalStorage();
+            
+            // Actualizar UI
+            actualizarResumen();
+            actualizarTabla();
+            actualizarObjetivoAhorro();
+            actualizarFiltroCategorias();
+            actualizarResumenCategorias();
+            actualizarGraficos();
+            actualizarPresupuestos();
+            renderizarCalendario();
+            
+            // Cerrar modal y limpiar
+            document.getElementById('rapido-monto').value = '';
+            document.getElementById('rapido-descripcion').value = '';
+            toggleModalAccionRapida();
+            
+            // Mostrar confirmación
+            const signo = tipo === 'Ingreso' ? '+' : tipo === 'Gasto' ? '-' : '🐷';
+            mostrarToast('¡Agregado!', `${signo} ${formatearMoneda(monto)} en ${categoria}`, 'exito');
+        }
+
+        // Cerrar modal de acción rápida al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('modal-accion-rapida');
+            const botonFlotante = document.querySelector('.btn-accion-flotante');
+            
+            if (modal && modal.classList.contains('visible')) {
+                if (!modal.contains(e.target) && e.target !== botonFlotante) {
+                    toggleModalAccionRapida();
+                }
+            }
+        });
         
         // ==================== FUNCIONES DE LOCALSTORAGE ====================
         
@@ -1664,6 +3010,11 @@
             localStorage.setItem('finanzas_categorias', JSON.stringify(categoriasPersonalizadas));
             localStorage.setItem('finanzas_presupuestos', JSON.stringify(presupuestos));
             localStorage.setItem('finanzas_recurrentes', JSON.stringify(movimientosRecurrentes));
+            
+            // Auto-guardar en archivo local si está activo
+            if (typeof autoGuardarSiActivo === 'function') {
+                autoGuardarSiActivo();
+            }
         }
         
         /**
@@ -1851,7 +3202,7 @@
          * @returns {string} - Emoji del icono
          */
         function obtenerIconoCategoria(nombre) {
-            for (const tipo of ['Ingreso', 'Gasto']) {
+            for (const tipo of ['Ingreso', 'Gasto', 'Ahorro']) {
                 const categorias = obtenerCategorias(tipo);
                 const cat = categorias.find(c => c.nombre === nombre);
                 if (cat) return cat.icono;
@@ -1903,6 +3254,8 @@
             actualizarObjetivoAhorro();
             actualizarFiltroCategorias();
             actualizarResumenCategorias();
+            actualizarGraficos();
+            actualizarPresupuestos();
             
             // Limpiar formulario
             document.getElementById('formulario-movimiento').reset();
@@ -2047,10 +3400,14 @@
             // Calcular totales
             const movIngreso = movimientosMes.filter(m => m.tipo === 'Ingreso');
             const movGasto = movimientosMes.filter(m => m.tipo === 'Gasto');
+            const movAhorro = movimientosMes.filter(m => m.tipo === 'Ahorro');
             
             const ingresos = movIngreso.reduce((sum, m) => sum + m.monto, 0);
             const gastos = movGasto.reduce((sum, m) => sum + m.monto, 0);
-            const balance = ingresos - gastos;
+            const ahorros = movAhorro.reduce((sum, m) => sum + m.monto, 0);
+            
+            // Balance = Ingresos - Gastos - Ahorros (el ahorro es dinero apartado, no disponible)
+            const balance = ingresos - gastos - ahorros;
             
             // Actualizar elementos del DOM
             document.getElementById('total-ingresos').textContent = formatearMoneda(ingresos);
@@ -2065,11 +3422,11 @@
             // Estado del balance
             const estadoBalance = document.getElementById('balance-estado');
             if (balance > 0) {
-                estadoBalance.textContent = '¡Vas bien! 👍';
+                estadoBalance.textContent = '💵 Disponible para gastar';
             } else if (balance < 0) {
-                estadoBalance.textContent = 'Atención: Gastos > Ingresos';
+                estadoBalance.textContent = '⚠️ Estás en números rojos';
             } else {
-                estadoBalance.textContent = 'Neutro';
+                estadoBalance.textContent = 'Sin saldo disponible';
             }
 
             // Total histórico de transacciones
@@ -2077,7 +3434,7 @@
         }
         
         /**
-         * Renderiza los movimientos en la tabla aplicando filtros y ordenamiento.
+         * Renderiza los movimientos en la tabla aplicando filtros, ordenamiento y paginación.
          * Muestra un mensaje si no hay movimientos que mostrar.
          */
         function actualizarTabla() {
@@ -2096,19 +3453,45 @@
             // Mostrar mensaje si no hay datos
             if (movimientosFiltrados.length === 0) {
                 sinDatos.style.display = 'block';
+                ocultarPaginacion();
                 return;
             }
             
             sinDatos.style.display = 'none';
             
+            // Calcular paginación
+            const totalPaginas = Math.ceil(movimientosFiltrados.length / itemsPorPagina);
+            
+            // Ajustar página actual si es necesario
+            if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+            if (paginaActual < 1) paginaActual = 1;
+            
+            // Obtener movimientos de la página actual
+            const inicio = (paginaActual - 1) * itemsPorPagina;
+            const fin = inicio + itemsPorPagina;
+            const movimientosPagina = movimientosFiltrados.slice(inicio, fin);
+            
             // Renderizar cada movimiento como fila de la tabla
-            movimientosFiltrados.forEach(mov => {
+            movimientosPagina.forEach(mov => {
                 const fila = document.createElement('tr');
                 fila.className = 'fade-in';
+                fila.setAttribute('role', 'row');
                 
-                const clasesTipo = mov.tipo === 'Ingreso' ? 'tipo-ingreso' : 'tipo-gasto';
-                const clasesMonto = mov.tipo === 'Ingreso' ? 'monto-positivo' : 'monto-negativo';
-                const signo = mov.tipo === 'Ingreso' ? '+' : '-';
+                // Determinar clases según el tipo
+                let clasesTipo, clasesMonto, signo;
+                if (mov.tipo === 'Ingreso') {
+                    clasesTipo = 'tipo-ingreso';
+                    clasesMonto = 'monto-positivo';
+                    signo = '+';
+                } else if (mov.tipo === 'Ahorro') {
+                    clasesTipo = 'tipo-ahorro';
+                    clasesMonto = 'monto-ahorro';
+                    signo = '🐷 ';
+                } else {
+                    clasesTipo = 'tipo-gasto';
+                    clasesMonto = 'monto-negativo';
+                    signo = '-';
+                }
                 const icono = obtenerIconoCategoria(mov.categoria);
                 
                 fila.innerHTML = `
@@ -2118,10 +3501,10 @@
                     <td>${mov.descripcion}</td>
                     <td class="${clasesMonto}">${signo}${formatearMoneda(mov.monto)}</td>
                     <td class="acciones-celda">
-                        <button class="btn btn-editar" onclick="abrirModalEditar(${mov.id})">
+                        <button class="btn btn-editar" onclick="abrirModalEditar(${mov.id})" aria-label="Editar movimiento">
                             Editar
                         </button>
-                        <button class="btn btn-eliminar" onclick="eliminarMovimiento(${mov.id})">
+                        <button class="btn btn-eliminar" onclick="eliminarMovimiento(${mov.id})" aria-label="Eliminar movimiento">
                             Eliminar
                         </button>
                     </td>
@@ -2129,11 +3512,92 @@
                 
                 cuerpoTabla.appendChild(fila);
             });
+            
+            // Renderizar paginación
+            renderizarPaginacion(movimientosFiltrados.length, totalPaginas);
+        }
+
+        /**
+         * Renderiza los controles de paginación
+         */
+        function renderizarPaginacion(totalItems, totalPaginas) {
+            let paginacionContainer = document.getElementById('paginacion-container');
+            
+            if (!paginacionContainer) {
+                paginacionContainer = document.createElement('div');
+                paginacionContainer.id = 'paginacion-container';
+                paginacionContainer.className = 'paginacion';
+                paginacionContainer.setAttribute('role', 'navigation');
+                paginacionContainer.setAttribute('aria-label', 'Paginación de movimientos');
+                document.querySelector('.tabla-container').appendChild(paginacionContainer);
+            }
+            
+            if (totalPaginas <= 1) {
+                paginacionContainer.style.display = 'none';
+                return;
+            }
+            
+            paginacionContainer.style.display = 'flex';
+            
+            const inicioItem = (paginaActual - 1) * itemsPorPagina + 1;
+            const finItem = Math.min(paginaActual * itemsPorPagina, totalItems);
+            
+            let botonesHTML = '';
+            botonesHTML += `<button class="paginacion-btn" onclick="cambiarPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''} aria-label="Página anterior">◀</button>`;
+            
+            const maxBotones = 5;
+            let inicioBtn = Math.max(1, paginaActual - Math.floor(maxBotones / 2));
+            let finBtn = Math.min(totalPaginas, inicioBtn + maxBotones - 1);
+            
+            if (finBtn - inicioBtn < maxBotones - 1) {
+                inicioBtn = Math.max(1, finBtn - maxBotones + 1);
+            }
+            
+            if (inicioBtn > 1) {
+                botonesHTML += `<button class="paginacion-btn" onclick="cambiarPagina(1)">1</button>`;
+                if (inicioBtn > 2) botonesHTML += `<span style="padding: 0 5px;">...</span>`;
+            }
+            
+            for (let i = inicioBtn; i <= finBtn; i++) {
+                botonesHTML += `<button class="paginacion-btn ${i === paginaActual ? 'activo' : ''}" onclick="cambiarPagina(${i})" ${i === paginaActual ? 'aria-current="page"' : ''}>${i}</button>`;
+            }
+            
+            if (finBtn < totalPaginas) {
+                if (finBtn < totalPaginas - 1) botonesHTML += `<span style="padding: 0 5px;">...</span>`;
+                botonesHTML += `<button class="paginacion-btn" onclick="cambiarPagina(${totalPaginas})">${totalPaginas}</button>`;
+            }
+            
+            botonesHTML += `<button class="paginacion-btn" onclick="cambiarPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? 'disabled' : ''} aria-label="Página siguiente">▶</button>`;
+            
+            paginacionContainer.innerHTML = `
+                <span class="paginacion-info">Mostrando ${inicioItem}-${finItem} de ${totalItems} movimientos</span>
+                <div class="paginacion-botones">${botonesHTML}</div>
+            `;
+        }
+
+        /**
+         * Cambia a una página específica
+         */
+        function cambiarPagina(pagina) {
+            paginaActual = pagina;
+            actualizarTabla();
+            document.getElementById('tabla-movimientos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        /**
+         * Oculta la paginación cuando no hay datos
+         */
+        function ocultarPaginacion() {
+            const paginacionContainer = document.getElementById('paginacion-container');
+            if (paginacionContainer) {
+                paginacionContainer.style.display = 'none';
+            }
         }
         
         /**
          * Recalcula el porcentaje de cumplimiento del objetivo de ahorro.
          * Actualiza la barra de progreso y los indicadores visuales.
+         * Ahora cuenta los movimientos de tipo "Ahorro" directamente.
          */
         function actualizarObjetivoAhorro() {
             const mesActual = new Date().getMonth();
@@ -2145,7 +3609,12 @@
                 return fechaMov.getMonth() === mesActual && fechaMov.getFullYear() === anioActual;
             });
             
-            // Calcular ahorro del mes (ingresos - gastos)
+            // Calcular ahorro del mes (movimientos tipo "Ahorro")
+            const ahorrosRegistrados = movimientosMes
+                .filter(m => m.tipo === 'Ahorro')
+                .reduce((sum, m) => sum + m.monto, 0);
+            
+            // También calcular el ahorro implícito (ingresos - gastos) para referencia
             const ingresos = movimientosMes
                 .filter(m => m.tipo === 'Ingreso')
                 .reduce((sum, m) => sum + m.monto, 0);
@@ -2154,7 +3623,8 @@
                 .filter(m => m.tipo === 'Gasto')
                 .reduce((sum, m) => sum + m.monto, 0);
             
-            const ahorrado = Math.max(0, ingresos - gastos);
+            // El ahorro total es lo que registraste explícitamente como ahorro
+            const ahorrado = ahorrosRegistrados;
             
             // Calcular porcentaje
             let porcentaje = 0;
@@ -2284,9 +3754,22 @@
         
         /**
          * Aplica los filtros seleccionados y actualiza la tabla.
+         * Usa debounce para búsqueda de texto
          */
         function aplicarFiltros() {
+            paginaActual = 1; // Resetear a primera página al filtrar
             actualizarTabla();
+        }
+
+        /**
+         * Aplica filtros con debounce para la búsqueda de texto
+         */
+        function aplicarFiltrosConDebounce() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                paginaActual = 1;
+                actualizarTabla();
+            }, 300);
         }
         
         /**
@@ -2298,6 +3781,7 @@
             document.getElementById('filtro-fecha-desde').value = '';
             document.getElementById('filtro-fecha-hasta').value = '';
             document.getElementById('filtro-busqueda').value = '';
+            paginaActual = 1;
             actualizarTabla();
         }
         
@@ -2402,22 +3886,6 @@
             const csv = [headers.join(','), ...filas.map(f => f.join(','))].join('\n');
             descargarArchivo(csv, 'finanzas_movimientos.csv', 'text/csv');
             mostrarMensaje('Archivo CSV exportado correctamente.', 'exito');
-        }
-
-        /**
-         * Exporta todos los datos a un archivo JSON.
-         */
-        function exportarJSON() {
-            const datos = {
-                movimientos,
-                objetivoAhorro,
-                categoriasPersonalizadas,
-                fechaExportacion: new Date().toISOString()
-            };
-
-            const json = JSON.stringify(datos, null, 2);
-            descargarArchivo(json, 'finanzas_backup.json', 'application/json');
-            mostrarMensaje('Backup JSON exportado correctamente.', 'exito');
         }
 
         /**
@@ -2727,110 +4195,137 @@
         // ==================== FUNCIONES DE PRESUPUESTOS ====================
 
         /**
-         * Carga las categorías de gasto en el selector de presupuestos
+         * Ya no se necesita - el sistema es automático
          */
         function cargarCategoriasPresupuesto() {
-            const select = document.getElementById('presupuesto-categoria');
-            select.innerHTML = '';
+            // Función vacía para compatibilidad
+        }
+
+        /**
+         * Calcula el promedio de gastos de los últimos 3 meses por categoría
+         */
+        function calcularPromedioGastos() {
+            const promedios = {};
+            const hoy = new Date();
             
-            const categoriasGasto = obtenerCategorias('Gasto');
-            categoriasGasto.forEach(cat => {
-                if (!presupuestos[cat.nombre]) {
-                    const option = document.createElement('option');
-                    option.value = cat.nombre;
-                    option.textContent = `${cat.icono} ${cat.nombre}`;
-                    select.appendChild(option);
+            // Obtener todas las categorías que han tenido gastos
+            const categoriasUsadas = [...new Set(movimientos
+                .filter(m => m.tipo === 'Gasto')
+                .map(m => m.categoria))];
+            
+            categoriasUsadas.forEach(categoria => {
+                const gastosPorMes = [];
+                
+                // Revisar los últimos 3 meses (sin contar el actual)
+                for (let i = 1; i <= 3; i++) {
+                    const fecha = new Date(hoy);
+                    fecha.setMonth(fecha.getMonth() - i);
+                    const mes = fecha.getMonth();
+                    const anio = fecha.getFullYear();
+                    
+                    const gastoMes = movimientos
+                        .filter(m => {
+                            const f = new Date(m.fecha);
+                            return m.tipo === 'Gasto' && 
+                                   m.categoria === categoria && 
+                                   f.getMonth() === mes && 
+                                   f.getFullYear() === anio;
+                        })
+                        .reduce((sum, m) => sum + m.monto, 0);
+                    
+                    if (gastoMes > 0) {
+                        gastosPorMes.push(gastoMes);
+                    }
+                }
+                
+                // Calcular promedio si hay datos históricos
+                if (gastosPorMes.length > 0) {
+                    promedios[categoria] = Math.round(gastosPorMes.reduce((a, b) => a + b, 0) / gastosPorMes.length);
                 }
             });
+            
+            return promedios;
         }
 
         /**
-         * Agrega un nuevo presupuesto
-         */
-        function agregarPresupuesto() {
-            const categoria = document.getElementById('presupuesto-categoria').value;
-            const limite = parseFloat(document.getElementById('presupuesto-limite').value);
-
-            if (!categoria || isNaN(limite) || limite <= 0) {
-                mostrarMensaje('Por favor, completa todos los campos correctamente.', 'error');
-                return;
-            }
-
-            presupuestos[categoria] = limite;
-            guardarDatosLocalStorage();
-            actualizarPresupuestos();
-            cargarCategoriasPresupuesto();
-            document.getElementById('presupuesto-limite').value = '';
-            mostrarMensaje('Presupuesto agregado correctamente.', 'exito');
-        }
-
-        /**
-         * Elimina un presupuesto
-         */
-        function eliminarPresupuesto(categoria) {
-            if (confirm(`¿Eliminar el presupuesto de ${categoria}?`)) {
-                delete presupuestos[categoria];
-                guardarDatosLocalStorage();
-                actualizarPresupuestos();
-                cargarCategoriasPresupuesto();
-            }
-        }
-
-        /**
-         * Actualiza la visualización de presupuestos
+         * Actualiza la visualización de presupuestos automáticos
          */
         function actualizarPresupuestos() {
             const contenedor = document.getElementById('presupuestos-lista');
+            const sinPresupuestos = document.getElementById('sin-presupuestos');
             const mesActual = new Date().getMonth();
             const anioActual = new Date().getFullYear();
 
-            if (Object.keys(presupuestos).length === 0) {
-                contenedor.innerHTML = '<p class="sin-datos">No hay presupuestos configurados.</p>';
-                return;
-            }
-
-            // Calcular gastos por categoría del mes actual
-            const gastosPorCategoria = {};
+            // Calcular gastos del mes actual por categoría
+            const gastosMesActual = {};
             movimientos.filter(m => {
                 const fecha = new Date(m.fecha);
                 return m.tipo === 'Gasto' && fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
             }).forEach(m => {
-                gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + m.monto;
+                gastosMesActual[m.categoria] = (gastosMesActual[m.categoria] || 0) + m.monto;
             });
 
-            contenedor.innerHTML = Object.entries(presupuestos).map(([categoria, limite]) => {
-                const gastado = gastosPorCategoria[categoria] || 0;
-                const porcentaje = Math.min((gastado / limite) * 100, 100);
-                const icono = obtenerIconoCategoria(categoria);
-                
-                let estado = 'normal';
-                let estadoTexto = `${formatearMoneda(limite - gastado)} disponible`;
-                
-                if (porcentaje >= 100) {
-                    estado = 'excedido';
-                    estadoTexto = `¡Excedido por ${formatearMoneda(gastado - limite)}!`;
-                } else if (porcentaje >= 80) {
-                    estado = 'advertencia';
-                    estadoTexto = '¡Cuidado! Cerca del límite';
-                }
+            // Si no hay gastos este mes, mostrar mensaje
+            if (Object.keys(gastosMesActual).length === 0) {
+                contenedor.innerHTML = '';
+                sinPresupuestos.style.display = 'block';
+                return;
+            }
 
-                return `
-                    <div class="presupuesto-item">
-                        <div class="presupuesto-header">
-                            <span class="presupuesto-categoria">${icono} ${categoria}</span>
-                            <button class="btn btn-eliminar" onclick="eliminarPresupuesto('${categoria}')">×</button>
+            sinPresupuestos.style.display = 'none';
+
+            // Calcular promedios históricos
+            const promedios = calcularPromedioGastos();
+
+            // Generar cards para cada categoría con gastos este mes
+            contenedor.innerHTML = Object.entries(gastosMesActual)
+                .sort((a, b) => b[1] - a[1]) // Ordenar por monto descendente
+                .map(([categoria, gastado]) => {
+                    const icono = obtenerIconoCategoria(categoria);
+                    const promedio = promedios[categoria] || gastado; // Si no hay histórico, usar el actual
+                    const porcentaje = Math.min((gastado / promedio) * 100, 150); // Max 150% para visualización
+                    
+                    let estado = 'normal';
+                    let estadoTexto = '';
+                    let comparacion = '';
+                    
+                    if (promedios[categoria]) {
+                        const diferencia = gastado - promedio;
+                        if (diferencia > 0) {
+                            const porcentajeExceso = ((diferencia / promedio) * 100).toFixed(0);
+                            if (porcentaje >= 100) {
+                                estado = 'excedido';
+                                estadoTexto = `⚠️ +${formatearMoneda(diferencia)} sobre el promedio`;
+                            } else if (porcentaje >= 80) {
+                                estado = 'advertencia';
+                                estadoTexto = `Cerca del promedio habitual`;
+                            }
+                        } else {
+                            estado = 'normal';
+                            estadoTexto = `✅ ${formatearMoneda(Math.abs(diferencia))} menos que el promedio`;
+                        }
+                        comparacion = `Promedio: ${formatearMoneda(promedio)}`;
+                    } else {
+                        estadoTexto = '📊 Primera vez en esta categoría';
+                        comparacion = 'Sin historial previo';
+                    }
+
+                    return `
+                        <div class="presupuesto-item">
+                            <div class="presupuesto-header">
+                                <span class="presupuesto-categoria">${icono} ${categoria}</span>
+                            </div>
+                            <div class="presupuesto-valores">
+                                <span>Gastado: ${formatearMoneda(gastado)}</span>
+                                <span>${comparacion}</span>
+                            </div>
+                            <div class="presupuesto-barra">
+                                <div class="presupuesto-barra-relleno ${estado}" style="width: ${Math.min(porcentaje, 100)}%"></div>
+                            </div>
+                            <div class="presupuesto-estado ${estado}">${estadoTexto}</div>
                         </div>
-                        <div class="presupuesto-valores">
-                            <span>Gastado: ${formatearMoneda(gastado)}</span>
-                            <span>Límite: ${formatearMoneda(limite)}</span>
-                        </div>
-                        <div class="presupuesto-barra">
-                            <div class="presupuesto-barra-relleno ${estado}" style="width: ${porcentaje}%"></div>
-                        </div>
-                        <div class="presupuesto-estado ${estado}">${estadoTexto}</div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
         }
 
         // ==================== FUNCIONES DE MOVIMIENTOS RECURRENTES ====================
@@ -3158,6 +4653,7 @@
             actualizarPresupuestos();
             actualizarRecurrentes();
             cargarCategoriasPresupuesto();
+            renderizarCalendario();
         }
 
         /**
@@ -3187,7 +4683,7 @@
         function registrarServiceWorker() {
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
+                    navigator.serviceWorker.register('./sw.js')
                         .then((registration) => {
                             console.log('Service Worker registrado:', registration.scope);
                             
@@ -3221,13 +4717,1009 @@
             }
         }
 
+        // ==================== PIN DE SEGURIDAD ====================
+
+        /**
+         * Verifica si hay PIN configurado y muestra el overlay si es necesario
+         */
+        function verificarPinSeguridad() {
+            pinSeguridad = localStorage.getItem('finanzas_pin');
+            pinConfigurado = pinSeguridad !== null;
+            
+            if (pinConfigurado) {
+                document.getElementById('pin-overlay').classList.remove('oculto');
+                document.getElementById('pin-1').focus();
+            } else {
+                document.getElementById('pin-overlay').classList.add('oculto');
+            }
+        }
+
+        /**
+         * Mueve el foco al siguiente input de PIN
+         */
+        function moverPinInput(numero) {
+            const input = document.getElementById(`pin-${numero}`);
+            if (input.value.length === 1 && numero < 4) {
+                document.getElementById(`pin-${numero + 1}`).focus();
+            }
+            if (numero === 4 && input.value.length === 1) {
+                verificarPin();
+            }
+        }
+
+        /**
+         * Maneja la tecla backspace en inputs de PIN
+         */
+        function manejarBackspacePin(event, numero) {
+            if (event.key === 'Backspace' && numero > 1) {
+                const input = document.getElementById(`pin-${numero}`);
+                if (input.value === '') {
+                    document.getElementById(`pin-${numero - 1}`).focus();
+                }
+            }
+        }
+
+        /**
+         * Verifica el PIN ingresado
+         */
+        function verificarPin() {
+            const pinIngresado = `${document.getElementById('pin-1').value}${document.getElementById('pin-2').value}${document.getElementById('pin-3').value}${document.getElementById('pin-4').value}`;
+            
+            if (pinIngresado === pinSeguridad) {
+                document.getElementById('pin-overlay').classList.add('oculto');
+                document.getElementById('pin-error').classList.remove('visible');
+                // Limpiar inputs
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`pin-${i}`).value = '';
+                }
+            } else {
+                document.getElementById('pin-error').classList.add('visible');
+                // Limpiar inputs y enfocar primero
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`pin-${i}`).value = '';
+                }
+                document.getElementById('pin-1').focus();
+            }
+        }
+
+        /**
+         * Muestra el formulario para configurar/cambiar PIN
+         */
+        function mostrarConfigPin() {
+            const nuevoPin = prompt('Ingresa un nuevo PIN de 4 dígitos (o deja vacío para eliminar):');
+            
+            if (nuevoPin === null) return;
+            
+            if (nuevoPin === '') {
+                localStorage.removeItem('finanzas_pin');
+                pinSeguridad = null;
+                pinConfigurado = false;
+                document.getElementById('pin-overlay').classList.add('oculto');
+                mostrarToast('PIN eliminado', 'La protección por PIN ha sido desactivada', 'exito');
+            } else if (/^\d{4}$/.test(nuevoPin)) {
+                localStorage.setItem('finanzas_pin', nuevoPin);
+                pinSeguridad = nuevoPin;
+                pinConfigurado = true;
+                document.getElementById('pin-overlay').classList.add('oculto');
+                mostrarToast('PIN configurado', 'Tu nuevo PIN ha sido guardado', 'exito');
+            } else {
+                alert('El PIN debe ser exactamente 4 dígitos numéricos.');
+            }
+        }
+
+        // ==================== NOTIFICACIONES TOAST ====================
+
+        /**
+         * Muestra una notificación toast
+         */
+        function mostrarToast(titulo, mensaje, tipo = 'advertencia') {
+            const toast = document.getElementById('notificacion-toast');
+            const iconos = {
+                advertencia: '⚠️',
+                exito: '✅',
+                error: '❌'
+            };
+            
+            document.querySelector('.toast-icono').textContent = iconos[tipo] || '📢';
+            document.getElementById('toast-titulo').textContent = titulo;
+            document.getElementById('toast-mensaje').textContent = mensaje;
+            
+            toast.className = `notificacion-toast visible ${tipo}`;
+            
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => cerrarToast(), 5000);
+        }
+
+        /**
+         * Cierra la notificación toast
+         */
+        function cerrarToast() {
+            document.getElementById('notificacion-toast').classList.remove('visible');
+        }
+
+        /**
+         * Verifica presupuestos excedidos y notifica
+         */
+        function verificarPresupuestosExcedidos() {
+            const mesActual = new Date().getMonth();
+            const anioActual = new Date().getFullYear();
+
+            const gastosPorCategoria = {};
+            movimientos.filter(m => {
+                const fecha = new Date(m.fecha);
+                return m.tipo === 'Gasto' && fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+            }).forEach(m => {
+                gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + m.monto;
+            });
+
+            Object.entries(presupuestos).forEach(([categoria, limite]) => {
+                const gastado = gastosPorCategoria[categoria] || 0;
+                const porcentaje = (gastado / limite) * 100;
+                
+                if (porcentaje >= 100) {
+                    mostrarToast(
+                        `¡Presupuesto excedido!`,
+                        `Has excedido el límite de ${categoria} por ${formatearMoneda(gastado - limite)}`,
+                        'error'
+                    );
+                } else if (porcentaje >= 80) {
+                    mostrarToast(
+                        `Presupuesto al límite`,
+                        `Has usado el ${porcentaje.toFixed(0)}% del presupuesto de ${categoria}`,
+                        'advertencia'
+                    );
+                }
+            });
+        }
+
+        // ==================== CALENDARIO ====================
+
+        /**
+         * Inicializa el calendario
+         */
+        function inicializarCalendario() {
+            renderizarCalendario();
+        }
+
+        /**
+         * Navega entre meses del calendario
+         */
+        function navegarCalendario(direccion) {
+            if (direccion === 0) {
+                calendarioMes = new Date().getMonth();
+                calendarioAnio = new Date().getFullYear();
+            } else {
+                calendarioMes += direccion;
+                if (calendarioMes > 11) {
+                    calendarioMes = 0;
+                    calendarioAnio++;
+                } else if (calendarioMes < 0) {
+                    calendarioMes = 11;
+                    calendarioAnio--;
+                }
+            }
+            renderizarCalendario();
+        }
+
+        /**
+         * Renderiza el calendario completo
+         */
+        function renderizarCalendario() {
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            
+            document.getElementById('calendario-titulo').textContent = 
+                `${meses[calendarioMes]} ${calendarioAnio}`;
+
+            const grid = document.getElementById('calendario-grid');
+            grid.innerHTML = '';
+
+            // Encabezados de días
+            const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            diasSemana.forEach(dia => {
+                const header = document.createElement('div');
+                header.className = 'calendario-dia-header';
+                header.textContent = dia;
+                grid.appendChild(header);
+            });
+
+            // Primer día del mes
+            const primerDia = new Date(calendarioAnio, calendarioMes, 1);
+            const ultimoDia = new Date(calendarioAnio, calendarioMes + 1, 0);
+            const diasEnMes = ultimoDia.getDate();
+            const diaSemanaInicio = primerDia.getDay();
+
+            // Días del mes anterior
+            const mesAnterior = new Date(calendarioAnio, calendarioMes, 0);
+            const diasMesAnterior = mesAnterior.getDate();
+            
+            for (let i = diaSemanaInicio - 1; i >= 0; i--) {
+                const dia = document.createElement('div');
+                dia.className = 'calendario-dia otro-mes';
+                dia.innerHTML = `<span class="numero">${diasMesAnterior - i}</span>`;
+                grid.appendChild(dia);
+            }
+
+            // Días del mes actual
+            const hoy = new Date();
+            for (let i = 1; i <= diasEnMes; i++) {
+                const dia = document.createElement('div');
+                dia.className = 'calendario-dia';
+                
+                const fechaStr = `${calendarioAnio}-${String(calendarioMes + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
+                // Verificar si es hoy
+                if (i === hoy.getDate() && calendarioMes === hoy.getMonth() && calendarioAnio === hoy.getFullYear()) {
+                    dia.classList.add('hoy');
+                }
+
+                // Buscar movimientos de este día
+                const movsDia = movimientos.filter(m => m.fecha === fechaStr);
+                const tieneIngresos = movsDia.some(m => m.tipo === 'Ingreso');
+                const tieneGastos = movsDia.some(m => m.tipo === 'Gasto');
+
+                let indicadoresHTML = '';
+                if (tieneIngresos || tieneGastos) {
+                    indicadoresHTML = '<div class="indicadores">';
+                    if (tieneIngresos) indicadoresHTML += '<span class="indicador ingreso"></span>';
+                    if (tieneGastos) indicadoresHTML += '<span class="indicador gasto"></span>';
+                    indicadoresHTML += '</div>';
+                }
+
+                dia.innerHTML = `<span class="numero">${i}</span>${indicadoresHTML}`;
+                dia.onclick = () => seleccionarDiaCalendario(fechaStr, i);
+                
+                grid.appendChild(dia);
+            }
+
+            // Días del mes siguiente
+            const diasRestantes = 42 - (diaSemanaInicio + diasEnMes);
+            for (let i = 1; i <= diasRestantes; i++) {
+                const dia = document.createElement('div');
+                dia.className = 'calendario-dia otro-mes';
+                dia.innerHTML = `<span class="numero">${i}</span>`;
+                grid.appendChild(dia);
+            }
+        }
+
+        /**
+         * Selecciona un día del calendario y muestra sus movimientos
+         */
+        function seleccionarDiaCalendario(fechaStr, dia) {
+            calendarioDiaSeleccionado = fechaStr;
+            
+            // Quitar selección anterior
+            document.querySelectorAll('.calendario-dia.seleccionado').forEach(d => {
+                d.classList.remove('seleccionado');
+            });
+
+            const movsDia = movimientos.filter(m => m.fecha === fechaStr);
+            const detalle = document.getElementById('calendario-detalle');
+            const lista = document.getElementById('calendario-detalle-lista');
+            
+            document.getElementById('calendario-detalle-fecha').textContent = 
+                `Movimientos del ${formatearFecha(fechaStr)}`;
+
+            if (movsDia.length === 0) {
+                lista.innerHTML = '<p style="color: var(--color-texto-terciario);">No hay movimientos este día.</p>';
+            } else {
+                lista.innerHTML = movsDia.map(m => `
+                    <div class="calendario-detalle-item">
+                        <span>${obtenerIconoCategoria(m.categoria)} ${m.categoria}</span>
+                        <span class="${m.tipo === 'Ingreso' ? 'monto-positivo' : 'monto-negativo'}">
+                            ${m.tipo === 'Ingreso' ? '+' : '-'}${formatearMoneda(m.monto)}
+                        </span>
+                    </div>
+                `).join('');
+            }
+
+            detalle.classList.add('visible');
+        }
+
+        // ==================== EJECUCIÓN AUTOMÁTICA DE RECURRENTES ====================
+
+        /**
+         * Verifica y ejecuta movimientos recurrentes pendientes
+         */
+        function verificarYEjecutarRecurrentes() {
+            const hoy = new Date();
+            const diaHoy = hoy.getDate();
+            const mesHoy = hoy.getMonth();
+            const anioHoy = hoy.getFullYear();
+            let ejecutados = 0;
+
+            movimientosRecurrentes.forEach(r => {
+                if (!r.activo) return;
+
+                const ultimaEjecucion = r.ultimaEjecucion ? new Date(r.ultimaEjecucion) : null;
+                let debeEjecutar = false;
+
+                switch (r.frecuencia) {
+                    case 'mensual':
+                        if (diaHoy >= r.dia) {
+                            if (!ultimaEjecucion || 
+                                ultimaEjecucion.getMonth() !== mesHoy || 
+                                ultimaEjecucion.getFullYear() !== anioHoy) {
+                                debeEjecutar = true;
+                            }
+                        }
+                        break;
+                    case 'quincenal':
+                        const diasQuincenales = [r.dia, r.dia + 15 > 28 ? 28 : r.dia + 15];
+                        if (diasQuincenales.includes(diaHoy)) {
+                            if (!ultimaEjecucion || ultimaEjecucion.toDateString() !== hoy.toDateString()) {
+                                debeEjecutar = true;
+                            }
+                        }
+                        break;
+                    case 'semanal':
+                        if (hoy.getDay() === (r.dia % 7)) {
+                            if (!ultimaEjecucion || ultimaEjecucion.toDateString() !== hoy.toDateString()) {
+                                debeEjecutar = true;
+                            }
+                        }
+                        break;
+                    case 'anual':
+                        if (diaHoy === r.dia && mesHoy === (r.mesAnual || 0)) {
+                            if (!ultimaEjecucion || ultimaEjecucion.getFullYear() !== anioHoy) {
+                                debeEjecutar = true;
+                            }
+                        }
+                        break;
+                }
+
+                if (debeEjecutar) {
+                    // Ejecutar automáticamente
+                    const nuevoMovimiento = {
+                        id: Date.now() + Math.random(),
+                        tipo: r.tipo,
+                        categoria: r.categoria,
+                        monto: r.monto,
+                        fecha: hoy.toISOString().split('T')[0],
+                        descripcion: `${r.descripcion} (Auto-recurrente)`,
+                        etiquetas: ['recurrente', 'automatico']
+                    };
+
+                    movimientos.push(nuevoMovimiento);
+                    r.ultimaEjecucion = hoy.toISOString();
+                    ejecutados++;
+                }
+            });
+
+            if (ejecutados > 0) {
+                guardarDatosLocalStorage();
+                actualizarTodo();
+                mostrarToast(
+                    'Movimientos recurrentes',
+                    `Se ejecutaron ${ejecutados} movimiento(s) recurrente(s) automáticamente`,
+                    'exito'
+                );
+            }
+        }
+
+        // ==================== GENERACIÓN DE REPORTES PDF ====================
+
+        /**
+         * Genera un reporte PDF del mes actual
+         */
+        function generarReportePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const mesActual = new Date().getMonth();
+            const anioActual = new Date().getFullYear();
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+            // Título
+            doc.setFontSize(20);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Reporte de Finanzas Personales', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setTextColor(100);
+            doc.text(`${meses[mesActual]} ${anioActual}`, 105, 30, { align: 'center' });
+
+            // Filtrar movimientos del mes
+            const movimientosMes = movimientos.filter(m => {
+                const fecha = new Date(m.fecha);
+                return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+            });
+
+            // Calcular totales
+            const ingresos = movimientosMes.filter(m => m.tipo === 'Ingreso')
+                .reduce((sum, m) => sum + m.monto, 0);
+            const gastos = movimientosMes.filter(m => m.tipo === 'Gasto')
+                .reduce((sum, m) => sum + m.monto, 0);
+            const balance = ingresos - gastos;
+
+            // Resumen
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text('Resumen del Mes', 20, 45);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(39, 174, 96);
+            doc.text(`Ingresos: ${formatearMoneda(ingresos)}`, 20, 55);
+            doc.setTextColor(231, 76, 60);
+            doc.text(`Gastos: ${formatearMoneda(gastos)}`, 20, 62);
+            doc.setTextColor(balance >= 0 ? 39 : 231, balance >= 0 ? 174 : 76, balance >= 0 ? 96 : 60);
+            doc.text(`Balance: ${formatearMoneda(balance)}`, 20, 69);
+
+            // Tabla de movimientos
+            if (movimientosMes.length > 0) {
+                doc.setTextColor(0);
+                doc.setFontSize(12);
+                doc.text('Detalle de Movimientos', 20, 85);
+
+                const datosTabla = movimientosMes.map(m => [
+                    formatearFecha(m.fecha),
+                    m.tipo,
+                    m.categoria,
+                    m.descripcion.substring(0, 30),
+                    `${m.tipo === 'Ingreso' ? '+' : '-'}${formatearMoneda(m.monto)}`
+                ]);
+
+                doc.autoTable({
+                    startY: 90,
+                    head: [['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto']],
+                    body: datosTabla,
+                    theme: 'striped',
+                    headStyles: { fillColor: [102, 126, 234] },
+                    styles: { fontSize: 8 }
+                });
+            }
+
+            // Gastos por categoría
+            const gastosPorCategoria = {};
+            movimientosMes.filter(m => m.tipo === 'Gasto').forEach(m => {
+                gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + m.monto;
+            });
+
+            if (Object.keys(gastosPorCategoria).length > 0) {
+                const startY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 100;
+                doc.setFontSize(12);
+                doc.text('Gastos por Categoría', 20, startY);
+
+                const datosCategoria = Object.entries(gastosPorCategoria)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([cat, monto]) => [cat, formatearMoneda(monto)]);
+
+                doc.autoTable({
+                    startY: startY + 5,
+                    head: [['Categoría', 'Total']],
+                    body: datosCategoria,
+                    theme: 'grid',
+                    headStyles: { fillColor: [231, 76, 60] },
+                    styles: { fontSize: 9 }
+                });
+            }
+
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(
+                    `Generado el ${new Date().toLocaleString('es-CO')} - Página ${i} de ${pageCount}`,
+                    105, 290, { align: 'center' }
+                );
+            }
+
+            // Descargar
+            doc.save(`reporte_finanzas_${meses[mesActual].toLowerCase()}_${anioActual}.pdf`);
+            mostrarMensaje('Reporte PDF generado correctamente.', 'exito');
+        }
+
+        // ==================== FILE SYSTEM API - ARCHIVO LOCAL ====================
+
+        // Variable para el handle del archivo
+        let archivoHandle = null;
+        let autoGuardadoActivo = false;
+
+        /**
+         * Guarda los datos en un archivo local usando File System Access API
+         */
+        async function guardarArchivoLocal() {
+            // Verificar soporte
+            if (!('showSaveFilePicker' in window)) {
+                mostrarToast('No soportado', 'Tu navegador no soporta esta función. Usa Chrome o Edge.', 'error');
+                return;
+            }
+
+            try {
+                // Si no hay handle o queremos elegir nuevo archivo
+                if (!archivoHandle) {
+                    archivoHandle = await window.showSaveFilePicker({
+                        suggestedName: 'finanzas_datos.json',
+                        types: [{
+                            description: 'Archivo JSON',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+                }
+
+                // Preparar datos
+                const datos = {
+                    movimientos,
+                    objetivoAhorro,
+                    categoriasPersonalizadas,
+                    presupuestos,
+                    movimientosRecurrentes,
+                    fechaGuardado: new Date().toISOString(),
+                    version: '2.0'
+                };
+
+                // Escribir en archivo
+                const writable = await archivoHandle.createWritable();
+                await writable.write(JSON.stringify(datos, null, 2));
+                await writable.close();
+
+                // Actualizar estado
+                const nombreArchivo = archivoHandle.name;
+                document.getElementById('archivo-texto').textContent = `Guardado: ${nombreArchivo}`;
+                document.getElementById('archivo-status').className = 'sync-status sincronizado';
+                
+                mostrarToast('¡Guardado!', `Datos guardados en ${nombreArchivo}`, 'exito');
+
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Error guardando archivo:', error);
+                    mostrarToast('Error', 'No se pudo guardar el archivo', 'error');
+                }
+            }
+        }
+
+        /**
+         * Carga datos desde un archivo local usando File System Access API
+         */
+        async function cargarArchivoLocal() {
+            // Verificar soporte
+            if (!('showOpenFilePicker' in window)) {
+                mostrarToast('No soportado', 'Tu navegador no soporta esta función. Usa Chrome o Edge.', 'error');
+                return;
+            }
+
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'Archivo JSON',
+                        accept: { 'application/json': ['.json'] }
+                    }]
+                });
+
+                archivoHandle = handle;
+                const file = await handle.getFile();
+                const contenido = await file.text();
+                const datos = JSON.parse(contenido);
+
+                // Confirmar antes de reemplazar
+                if (confirm(`¿Cargar datos desde "${file.name}"? Esto reemplazará tus datos actuales.`)) {
+                    movimientos = datos.movimientos || [];
+                    objetivoAhorro = datos.objetivoAhorro || 0;
+                    categoriasPersonalizadas = datos.categoriasPersonalizadas || { Ingreso: [], Gasto: [], Ahorro: [] };
+                    presupuestos = datos.presupuestos || {};
+                    movimientosRecurrentes = datos.movimientosRecurrentes || [];
+
+                    guardarDatosLocalStorage();
+                    actualizarTodo();
+
+                    document.getElementById('archivo-texto').textContent = `Vinculado: ${file.name}`;
+                    document.getElementById('archivo-status').className = 'sync-status sincronizado';
+
+                    mostrarToast('¡Cargado!', `Datos restaurados desde ${file.name}`, 'exito');
+                }
+
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Error cargando archivo:', error);
+                    mostrarToast('Error', 'No se pudo cargar el archivo', 'error');
+                }
+            }
+        }
+
+        /**
+         * Activa/desactiva el auto-guardado en archivo local
+         */
+        function toggleAutoGuardadoArchivo() {
+            autoGuardadoActivo = document.getElementById('auto-guardar-archivo').checked;
+            
+            if (autoGuardadoActivo && !archivoHandle) {
+                mostrarToast('Sin archivo', 'Primero guarda en un archivo para activar auto-guardado', 'advertencia');
+                document.getElementById('auto-guardar-archivo').checked = false;
+                autoGuardadoActivo = false;
+                return;
+            }
+
+            if (autoGuardadoActivo) {
+                mostrarToast('Auto-guardado', 'Se guardará automáticamente en cada cambio', 'exito');
+            }
+        }
+
+        /**
+         * Guarda automáticamente si está activo
+         */
+        function autoGuardarSiActivo() {
+            if (autoGuardadoActivo && archivoHandle) {
+                guardarArchivoLocal();
+            }
+        }
+
+        // ==================== GITHUB GIST API ====================
+
+        /**
+         * Muestra/oculta el token de GitHub
+         */
+        function toggleVerToken() {
+            const input = document.getElementById('github-token');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        /**
+         * Muestra ayuda sobre cómo obtener token de GitHub
+         */
+        function mostrarAyudaGitHub() {
+            const ayuda = `
+🔑 CÓMO OBTENER UN TOKEN DE GITHUB:
+
+1. Ve a github.com e inicia sesión
+2. Haz clic en tu foto de perfil → Settings
+3. En el menú izquierdo, baja hasta "Developer settings"
+4. Haz clic en "Personal access tokens" → "Tokens (classic)"
+5. Clic en "Generate new token" → "Generate new token (classic)"
+6. Dale un nombre descriptivo como "Finanzas App"
+7. Selecciona solo el permiso "gist"
+8. Clic en "Generate token"
+9. ¡COPIA EL TOKEN INMEDIATAMENTE! Solo se muestra una vez
+
+El token se verá así: ghp_xxxxxxxxxxxxxxxxxxxx
+
+⚠️ IMPORTANTE: Guarda el token en un lugar seguro
+            `;
+            alert(ayuda);
+        }
+
+        /**
+         * Guarda la configuración de GitHub en localStorage
+         */
+        function guardarConfigGitHub() {
+            const token = document.getElementById('github-token').value.trim();
+            const gistId = document.getElementById('gist-id').value.trim();
+
+            if (!token) {
+                mostrarToast('Token requerido', 'Ingresa un token de GitHub', 'error');
+                return;
+            }
+
+            localStorage.setItem('finanzas_github_token', token);
+            if (gistId) {
+                localStorage.setItem('finanzas_gist_id', gistId);
+            }
+
+            document.getElementById('github-texto').textContent = 'Configurado ✓';
+            document.getElementById('github-status').className = 'sync-status sincronizado';
+            
+            mostrarToast('¡Guardado!', 'Configuración de GitHub guardada', 'exito');
+        }
+
+        /**
+         * Carga la configuración de GitHub desde localStorage
+         */
+        function cargarConfigGitHub() {
+            const token = localStorage.getItem('finanzas_github_token');
+            const gistId = localStorage.getItem('finanzas_gist_id');
+
+            if (token) {
+                document.getElementById('github-token').value = token;
+                document.getElementById('github-texto').textContent = 'Configurado ✓';
+                document.getElementById('github-status').className = 'sync-status sincronizado';
+            }
+            if (gistId) {
+                document.getElementById('gist-id').value = gistId;
+            }
+        }
+
+        /**
+         * Sincroniza los datos con GitHub Gist
+         */
+        async function sincronizarGitHub() {
+            const token = localStorage.getItem('finanzas_github_token');
+            let gistId = localStorage.getItem('finanzas_gist_id');
+
+            if (!token) {
+                mostrarToast('Sin configurar', 'Primero configura tu token de GitHub', 'error');
+                return;
+            }
+
+            // Mostrar estado
+            document.getElementById('github-texto').textContent = 'Sincronizando...';
+            document.getElementById('github-status').className = 'sync-status sincronizando';
+
+            // Preparar datos
+            const datos = {
+                movimientos,
+                objetivoAhorro,
+                categoriasPersonalizadas,
+                presupuestos,
+                movimientosRecurrentes,
+                fechaSincronizacion: new Date().toISOString(),
+                version: '2.0'
+            };
+
+            const contenidoArchivo = JSON.stringify(datos, null, 2);
+
+            try {
+                let response;
+
+                if (gistId) {
+                    // Actualizar Gist existente
+                    response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            files: {
+                                'finanzas_backup.json': {
+                                    content: contenidoArchivo
+                                }
+                            }
+                        })
+                    });
+                } else {
+                    // Crear nuevo Gist
+                    response = await fetch('https://api.github.com/gists', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            description: 'Backup de Finanzas Personales',
+                            public: false,
+                            files: {
+                                'finanzas_backup.json': {
+                                    content: contenidoArchivo
+                                }
+                            }
+                        })
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const resultado = await response.json();
+
+                // Guardar el ID del Gist para futuras sincronizaciones
+                if (!gistId) {
+                    localStorage.setItem('finanzas_gist_id', resultado.id);
+                    document.getElementById('gist-id').value = resultado.id;
+                }
+
+                // Actualizar estado
+                const fecha = new Date().toLocaleString('es-CO');
+                document.getElementById('github-texto').textContent = `Sincronizado: ${fecha}`;
+                document.getElementById('github-status').className = 'sync-status sincronizado';
+
+                mostrarToast('¡Sincronizado!', 'Datos guardados en GitHub Gist', 'exito');
+
+            } catch (error) {
+                console.error('Error sincronizando con GitHub:', error);
+                document.getElementById('github-texto').textContent = 'Error de sincronización';
+                document.getElementById('github-status').className = 'sync-status error';
+                mostrarToast('Error', 'No se pudo sincronizar con GitHub. Verifica tu token.', 'error');
+            }
+        }
+
+        /**
+         * Carga datos desde GitHub Gist
+         */
+        async function cargarDesdeGitHub() {
+            const token = localStorage.getItem('finanzas_github_token');
+            const gistId = localStorage.getItem('finanzas_gist_id');
+
+            if (!token || !gistId) {
+                mostrarToast('Sin configurar', 'Configura tu token y sincroniza primero', 'error');
+                return;
+            }
+
+            document.getElementById('github-texto').textContent = 'Descargando...';
+
+            try {
+                const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: {
+                        'Authorization': `token ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const gist = await response.json();
+                const contenido = gist.files['finanzas_backup.json']?.content;
+
+                if (!contenido) {
+                    throw new Error('Archivo no encontrado en el Gist');
+                }
+
+                const datos = JSON.parse(contenido);
+
+                if (confirm('¿Descargar datos desde GitHub? Esto reemplazará tus datos actuales.')) {
+                    movimientos = datos.movimientos || [];
+                    objetivoAhorro = datos.objetivoAhorro || 0;
+                    categoriasPersonalizadas = datos.categoriasPersonalizadas || { Ingreso: [], Gasto: [], Ahorro: [] };
+                    presupuestos = datos.presupuestos || {};
+                    movimientosRecurrentes = datos.movimientosRecurrentes || [];
+
+                    guardarDatosLocalStorage();
+                    actualizarTodo();
+
+                    const fecha = new Date().toLocaleString('es-CO');
+                    document.getElementById('github-texto').textContent = `Descargado: ${fecha}`;
+
+                    mostrarToast('¡Descargado!', 'Datos restaurados desde GitHub', 'exito');
+                } else {
+                    document.getElementById('github-texto').textContent = 'Configurado ✓';
+                }
+
+            } catch (error) {
+                console.error('Error cargando desde GitHub:', error);
+                document.getElementById('github-texto').textContent = 'Error al descargar';
+                document.getElementById('github-status').className = 'sync-status error';
+                mostrarToast('Error', 'No se pudo descargar desde GitHub', 'error');
+            }
+        }
+
         // ==================== INICIAR APLICACIÓN ====================
         
         // Ejecutar inicialización cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {
             inicializar();
             registrarServiceWorker();
+            configurarAtajosTeclado();
         });
+
+        // ==================== ATAJOS DE TECLADO ====================
+
+        /**
+         * Configura los atajos de teclado globales
+         */
+        function configurarAtajosTeclado() {
+            document.addEventListener('keydown', (e) => {
+                // No activar atajos si estamos en un input/textarea
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                    // Solo Escape para cerrar modales
+                    if (e.key === 'Escape') {
+                        cerrarModalEditar();
+                        cerrarAyudaAtajos();
+                    }
+                    return;
+                }
+
+                // Ctrl/Cmd + tecla
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key.toLowerCase()) {
+                        case 'n': // Nuevo movimiento
+                            e.preventDefault();
+                            document.getElementById('tipo').focus();
+                            document.getElementById('tipo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            break;
+                        case 's': // Guardar/Sincronizar
+                            e.preventDefault();
+                            sincronizarNube();
+                            break;
+                        case 'e': // Exportar CSV
+                            e.preventDefault();
+                            exportarCSV();
+                            break;
+                        case 'p': // Generar PDF
+                            e.preventDefault();
+                            generarReportePDF();
+                            break;
+                        case 'f': // Enfocar búsqueda
+                            e.preventDefault();
+                            document.getElementById('filtro-busqueda').focus();
+                            document.getElementById('filtro-busqueda').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            break;
+                    }
+                }
+
+                // Teclas sin modificador
+                switch (e.key) {
+                    case '?': // Mostrar ayuda de atajos
+                        e.preventDefault();
+                        toggleAyudaAtajos();
+                        break;
+                    case 'Escape': // Cerrar modales/ayuda
+                        cerrarModalEditar();
+                        cerrarAyudaAtajos();
+                        break;
+                    case '1': // Ir a resumen
+                        if (!e.ctrlKey && !e.metaKey) {
+                            document.querySelector('.resumen').scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                    case '2': // Ir a formulario
+                        if (!e.ctrlKey && !e.metaKey) {
+                            document.getElementById('formulario-movimiento').scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                    case '3': // Ir a tabla
+                        if (!e.ctrlKey && !e.metaKey) {
+                            document.getElementById('tabla-movimientos').scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                    case '4': // Ir a gráficos
+                        if (!e.ctrlKey && !e.metaKey) {
+                            document.getElementById('grafico-gastos').scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                }
+            });
+        }
+
+        /**
+         * Muestra/oculta el panel de ayuda de atajos
+         */
+        function toggleAyudaAtajos() {
+            let ayuda = document.getElementById('shortcuts-help');
+            if (!ayuda) {
+                ayuda = crearPanelAyudaAtajos();
+            }
+            ayuda.classList.toggle('visible');
+        }
+
+        /**
+         * Cierra el panel de ayuda de atajos
+         */
+        function cerrarAyudaAtajos() {
+            const ayuda = document.getElementById('shortcuts-help');
+            if (ayuda) {
+                ayuda.classList.remove('visible');
+            }
+        }
+
+        /**
+         * Crea el panel de ayuda de atajos de teclado
+         */
+        function crearPanelAyudaAtajos() {
+            const ayuda = document.createElement('div');
+            ayuda.id = 'shortcuts-help';
+            ayuda.className = 'shortcuts-help';
+            ayuda.innerHTML = `
+                <h4>⌨️ Atajos de Teclado</h4>
+                <ul>
+                    <li><span>Nuevo movimiento</span><kbd>Ctrl+N</kbd></li>
+                    <li><span>Buscar</span><kbd>Ctrl+F</kbd></li>
+                    <li><span>Exportar CSV</span><kbd>Ctrl+E</kbd></li>
+                    <li><span>Generar PDF</span><kbd>Ctrl+P</kbd></li>
+                    <li><span>Sincronizar</span><kbd>Ctrl+S</kbd></li>
+                    <li><span>Ir al resumen</span><kbd>1</kbd></li>
+                    <li><span>Ir al formulario</span><kbd>2</kbd></li>
+                    <li><span>Ir a movimientos</span><kbd>3</kbd></li>
+                    <li><span>Ir a gráficos</span><kbd>4</kbd></li>
+                    <li><span>Cerrar modal</span><kbd>Esc</kbd></li>
+                    <li><span>Esta ayuda</span><kbd>?</kbd></li>
+                </ul>
+                <button class="btn btn-secundario btn-pequeno" onclick="cerrarAyudaAtajos()" style="width: 100%; margin-top: 10px;">Cerrar</button>
+            `;
+            document.body.appendChild(ayuda);
+            
+            // También crear botón flotante de ayuda
+            const btnAyuda = document.createElement('button');
+            btnAyuda.className = 'btn-ayuda-flotante';
+            btnAyuda.innerHTML = '?';
+            btnAyuda.setAttribute('aria-label', 'Ver atajos de teclado');
+            btnAyuda.onclick = toggleAyudaAtajos;
+            document.body.appendChild(btnAyuda);
+            
+            return ayuda;
+        }
     </script>
 
 </body>
