@@ -551,10 +551,11 @@
                             <label for="github-token">Token de GitHub (Personal Access Token)</label>
                             <div style="display: flex; gap: 10px;">
                                 <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx" style="flex: 1;">
-                                <button class="btn btn-secundario btn-pequeno" onclick="toggleVerToken()">👁️</button>
+                                <button class="btn btn-secundario btn-pequeno" onclick="toggleVerToken()" title="Mostrar/Ocultar token">👁️</button>
                             </div>
-                            <small style="color: var(--color-texto-terciario);">
-                                <a href="#" onclick="mostrarAyudaGitHub()" style="color: var(--color-primario);">¿Cómo obtener un token?</a>
+                            <small style="color: var(--color-texto-terciario); display: block; margin-top: 5px;">
+                                <a href="#" onclick="mostrarAyudaGitHub()" style="color: var(--color-primario);">¿Cómo obtener un token?</a> • 
+                                <strong style="color: var(--color-exito);">Se guarda automáticamente en tu navegador</strong>
                             </small>
                         </div>
                         <div class="campo" style="margin-bottom: 10px;">

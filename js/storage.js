@@ -232,14 +232,17 @@ function guardarConfigGitHub() {
     }
 
     localStorage.setItem('finanzas_github_token', token);
+    document.getElementById('github-token').placeholder = '✓ Token guardado (click 👁️ para ver)';
+    
     if (gistId) {
         localStorage.setItem('finanzas_gist_id', gistId);
+        document.getElementById('gist-id').placeholder = '✓ Gist ID guardado';
     }
 
     document.getElementById('github-texto').textContent = 'Configurado ✓';
     document.getElementById('github-status').className = 'sync-status sincronizado';
     
-    mostrarToast('¡Guardado!', 'Configuración de GitHub guardada', 'exito');
+    mostrarToast('¡Guardado!', 'Configuración de GitHub guardada correctamente. Permanecerá guardada entre sesiones.', 'exito');
 }
 
 /**
@@ -251,11 +254,13 @@ function cargarConfigGitHub() {
 
     if (token) {
         document.getElementById('github-token').value = token;
+        document.getElementById('github-token').placeholder = '✓ Token guardado (click 👁️ para ver)';
         document.getElementById('github-texto').textContent = 'Configurado ✓';
         document.getElementById('github-status').className = 'sync-status sincronizado';
     }
     if (gistId) {
         document.getElementById('gist-id').value = gistId;
+        document.getElementById('gist-id').placeholder = '✓ Gist ID guardado';
     }
 }
 
