@@ -577,6 +577,21 @@
                         <button class="btn btn-secundario" onclick="cargarDesdeGitHub()">📥 Descargar de GitHub</button>
                     </div>
                     
+                    <!-- Opciones de recuperación de emergencia -->
+                    <div style="margin-top: 15px; padding: 12px; background: var(--color-fondo-secundario); border-radius: 8px; border-left: 3px solid var(--color-advertencia);">
+                        <p style="font-size: 0.85rem; margin-bottom: 10px; color: var(--color-texto-secundario);">
+                            🆘 <strong>Recuperación de Emergencia:</strong>
+                        </p>
+                        <div class="btn-grupo">
+                            <button class="btn btn-advertencia btn-pequeno" onclick="restaurarVersionAnteriorGitHub()" title="Restaura la versión anterior de GitHub si sincronizaste por error">
+                                ⏮️ Restaurar Versión Anterior
+                            </button>
+                            <button class="btn btn-secundario btn-pequeno" onclick="restaurarBackupEmergencia()" title="Restaura el backup automático creado antes de la última descarga">
+                                🔄 Backup de Emergencia
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="sync-status" id="github-status" style="margin-top: 10px;">
                         <span class="sync-icon">☁️</span>
                         <span id="github-texto">No configurado</span>

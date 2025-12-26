@@ -276,6 +276,41 @@ async function sincronizarGitHub() {
         return;
     }
 
+    // PROTECCIÓN 1: Validar que hay datos para sincronizar
+    const totalMovimientos = movimientos.length;
+    const totalCategorias = (categoriasPersonalizadas.Ingreso?.length || 0) + 
+                           (categoriasPersonalizadas.Gasto?.length || 0) + 
+                           (categoriasPersonalizadas.Ahorro?.length || 0);
+    const totalRecurrentes = movimientosRecurrentes?.length || 0;
+
+    // PROTECCIÓN 2: Advertir si se van a sincronizar datos vacíos
+    if (totalMovimientos === 0 && totalCategorias === 0 && totalRecurrentes === 0) {
+        const continuar = confirm(
+            '⚠️ ADVERTENCIA: Tu app está vacía\n\n' +
+            'Estás a punto de sincronizar CERO movimientos a GitHub.\n' +
+            'Esto SOBRESCRIBIRÁ cualquier backup anterior.\n\n' +
+            '¿Estás seguro de continuar?'
+        );
+        if (!continuar) {
+            mostrarToast('Cancelado', 'Sincronización cancelada', 'advertencia');
+            return;
+        }
+    }
+
+    // PROTECCIÓN 3: Mostrar resumen y pedir confirmación
+    const resumen = 
+        `📊 Resumen de sincronización:\n\n` +
+        `✅ Movimientos: ${totalMovimientos}\n` +
+        `🏷️ Categorías personalizadas: ${totalCategorias}\n` +
+        `🔄 Recurrentes: ${totalRecurrentes}\n` +
+        `🎯 Objetivo de ahorro: $${formatearMoneda(objetivoAhorro)}\n\n` +
+        `¿Sincronizar estos datos a GitHub?`;
+
+    if (!confirm(resumen)) {
+        mostrarToast('Cancelado', 'Sincronización cancelada', 'advertencia');
+        return;
+    }
+
     // Mostrar estado
     document.getElementById('github-texto').textContent = 'Sincronizando...';
     document.getElementById('github-status').className = 'sync-status sincronizando';
@@ -393,7 +428,52 @@ async function cargarDesdeGitHub() {
 
         const datos = JSON.parse(contenido);
 
-        if (confirm('¿Descargar datos desde GitHub? Esto reemplazará tus datos actuales.')) {
+        // PROTECCIÓN 4: Validar que los datos de GitHub no están vacíos
+        const movimientosGitHub = datos.movimientos?.length || 0;
+        const categoriasGitHub = (datos.categoriasPersonalizadas?.Ingreso?.length || 0) + 
+                                (datos.categoriasPersonalizadas?.Gasto?.length || 0) + 
+                                (datos.categoriasPersonalizadas?.Ahorro?.length || 0);
+        const recurrentesGitHub = datos.movimientosRecurrentes?.length || 0;
+
+        // Advertir si GitHub tiene datos vacíos
+        if (movimientosGitHub === 0 && categoriasGitHub === 0 && recurrentesGitHub === 0) {
+            const continuar = confirm(
+                '⚠️ ADVERTENCIA: Los datos en GitHub están VACÍOS\n\n' +
+                'El backup en GitHub no contiene movimientos.\n' +
+                'Si descargas esto, PERDERÁS tus datos actuales.\n\n' +
+                '💡 Sugerencia: Cancela y verifica tu Gist en GitHub\n' +
+                'https://gist.github.com/' + gistId + '/revisions\n\n' +
+                '¿Continuar de todos modos?'
+            );
+            if (!continuar) {
+                document.getElementById('github-texto').textContent = 'Descarga cancelada';
+                mostrarToast('Cancelado', 'Descarga cancelada por seguridad', 'advertencia');
+                return;
+            }
+        }
+
+        // PROTECCIÓN 5: Backup automático antes de reemplazar
+        const backupActual = {
+            movimientos,
+            objetivoAhorro,
+            categoriasPersonalizadas,
+            presupuestos,
+            movimientosRecurrentes,
+            fechaBackup: new Date().toISOString()
+        };
+        localStorage.setItem('finanzas_backup_emergencia', JSON.stringify(backupActual));
+
+        // Mostrar resumen de lo que se va a descargar
+        const resumen = 
+            `📥 Descargar desde GitHub:\n\n` +
+            `✅ Movimientos: ${movimientosGitHub}\n` +
+            `🏷️ Categorías: ${categoriasGitHub}\n` +
+            `🔄 Recurrentes: ${recurrentesGitHub}\n\n` +
+            `⚠️ Tus datos actuales (${movimientos.length} movimientos) serán reemplazados.\n` +
+            `✅ Se creará un backup automático de emergencia.\n\n` +
+            `¿Continuar?`;
+
+        if (confirm(resumen)) {
             movimientos = datos.movimientos || [];
             objetivoAhorro = datos.objetivoAhorro || 0;
             categoriasPersonalizadas = datos.categoriasPersonalizadas || { Ingreso: [], Gasto: [], Ahorro: [] };
@@ -406,7 +486,7 @@ async function cargarDesdeGitHub() {
             const fecha = new Date().toLocaleString('es-CO');
             document.getElementById('github-texto').textContent = `Descargado: ${fecha}`;
 
-            mostrarToast('¡Descargado!', 'Datos restaurados desde GitHub', 'exito');
+            mostrarToast('¡Descargado!', `${movimientosGitHub} movimientos restaurados desde GitHub`, 'exito');
         } else {
             document.getElementById('github-texto').textContent = 'Configurado ✓';
         }
@@ -416,6 +496,135 @@ async function cargarDesdeGitHub() {
         document.getElementById('github-texto').textContent = 'Error al descargar';
         document.getElementById('github-status').className = 'sync-status error';
         mostrarToast('Error', 'No se pudo descargar desde GitHub', 'error');
+    }
+}
+
+/**
+ * Restaura datos desde una versión anterior del Gist de GitHub
+ */
+async function restaurarVersionAnteriorGitHub() {
+    const token = localStorage.getItem('finanzas_github_token');
+    const gistId = localStorage.getItem('finanzas_gist_id');
+
+    if (!token || !gistId) {
+        mostrarToast('Sin configurar', 'Configura tu token de GitHub primero', 'error');
+        return;
+    }
+
+    if (!confirm('⏮️ Restaurar versión anterior desde GitHub\n\nEsto recuperará la SEGUNDA versión más reciente de tu Gist.\nÚsalo si acabas de sincronizar datos incorrectos.\n\n¿Continuar?')) {
+        return;
+    }
+
+    document.getElementById('github-texto').textContent = 'Buscando versión anterior...';
+
+    try {
+        // Obtener el historial del Gist
+        const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+
+        const gist = await response.json();
+
+        // Verificar que haya al menos 2 versiones
+        if (!gist.history || gist.history.length < 2) {
+            mostrarToast('Sin historial', 'No hay versiones anteriores para restaurar', 'advertencia');
+            document.getElementById('github-texto').textContent = 'Sin versiones anteriores';
+            return;
+        }
+
+        // Obtener la segunda versión (índice 1)
+        const versionAnterior = gist.history[1].version;
+        const fechaVersion = new Date(gist.history[1].committed_at).toLocaleString('es-CO');
+
+        // Descargar esa versión específica
+        const response2 = await fetch(`https://api.github.com/gists/${gistId}/${versionAnterior}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+
+        if (!response2.ok) {
+            throw new Error(`Error descargando versión: ${response2.status}`);
+        }
+
+        const gistAnterior = await response2.json();
+        const datos = JSON.parse(gistAnterior.files['finanzas_backup.json'].content);
+
+        const movimientosAnteriores = datos.movimientos?.length || 0;
+
+        // Confirmar restauración
+        if (confirm(`📅 Versión encontrada del: ${fechaVersion}\n\n✅ Movimientos: ${movimientosAnteriores}\n\n¿Restaurar esta versión?`)) {
+            
+            // Backup de emergencia
+            const backupActual = {
+                movimientos,
+                objetivoAhorro,
+                categoriasPersonalizadas,
+                presupuestos,
+                movimientosRecurrentes,
+                fechaBackup: new Date().toISOString()
+            };
+            localStorage.setItem('finanzas_backup_emergencia', JSON.stringify(backupActual));
+
+            // Restaurar datos
+            movimientos = datos.movimientos || [];
+            objetivoAhorro = datos.objetivoAhorro || 0;
+            categoriasPersonalizadas = datos.categoriasPersonalizadas || { Ingreso: [], Gasto: [], Ahorro: [] };
+            presupuestos = datos.presupuestos || {};
+            movimientosRecurrentes = datos.movimientosRecurrentes || [];
+
+            guardarDatosLocalStorage();
+            actualizarTodo();
+
+            document.getElementById('github-texto').textContent = `Restaurado: ${fechaVersion}`;
+            mostrarToast('¡Restaurado!', `${movimientosAnteriores} movimientos recuperados`, 'exito');
+
+            // Preguntar si quiere sincronizar esta versión como la actual
+            if (confirm('¿Sincronizar esta versión restaurada a GitHub?\n\nEsto la marcará como la versión más reciente.')) {
+                await sincronizarGitHub();
+            }
+        }
+
+    } catch (error) {
+        console.error('Error restaurando versión anterior:', error);
+        document.getElementById('github-texto').textContent = 'Error al restaurar';
+        mostrarToast('Error', 'No se pudo restaurar la versión anterior', 'error');
+    }
+}
+
+/**
+ * Restaura datos desde el backup de emergencia automático
+ */
+function restaurarBackupEmergencia() {
+    const backup = localStorage.getItem('finanzas_backup_emergencia');
+    
+    if (!backup) {
+        mostrarToast('Sin backup', 'No hay backup de emergencia disponible', 'advertencia');
+        return;
+    }
+
+    try {
+        const datos = JSON.parse(backup);
+        const fechaBackup = new Date(datos.fechaBackup).toLocaleString('es-CO');
+        const movimientosBackup = datos.movimientos?.length || 0;
+
+        if (confirm(`🆘 Restaurar backup de emergencia\n\nFecha: ${fechaBackup}\nMovimientos: ${movimientosBackup}\n\n¿Restaurar?`)) {
+            movimientos = datos.movimientos || [];
+            objetivoAhorro = datos.objetivoAhorro || 0;
+            categoriasPersonalizadas = datos.categoriasPersonalizadas || { Ingreso: [], Gasto: [], Ahorro: [] };
+            presupuestos = datos.presupuestos || {};
+            movimientosRecurrentes = datos.movimientosRecurrentes || [];
+
+            guardarDatosLocalStorage();
+            actualizarTodo();
+
+            mostrarToast('¡Restaurado!', `Backup de emergencia restaurado (${movimientosBackup} movimientos)`, 'exito');
+        }
+    } catch (error) {
+        console.error('Error restaurando backup de emergencia:', error);
+        mostrarToast('Error', 'No se pudo restaurar el backup de emergencia', 'error');
     }
 }
 
